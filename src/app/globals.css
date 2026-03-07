@@ -46,9 +46,9 @@ a {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1.75rem;
   display: grid;
-  gap: 0.75rem;
+  gap: 0.9rem;
   box-shadow: 0 8px 22px rgba(16, 46, 82, 0.08);
 }
 
@@ -58,7 +58,8 @@ a {
 .form-grid select {
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 0.65rem 0.75rem;
+  min-height: 42px;
+  padding: 0.7rem 0.8rem;
   background: #fff;
 }
 
@@ -79,18 +80,21 @@ button:hover {
   min-height: 100vh;
 }
 
-.navbar {
-  position: sticky;
+.sidebar {
+  position: fixed;
   top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
   z-index: 10;
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.8rem 1.1rem;
-  border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.95);
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+  padding: 1rem 0.85rem 0.85rem;
+  border-right: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(8px);
+  overflow: hidden;
 }
 
 .brand {
@@ -98,6 +102,8 @@ button:hover {
   gap: 0.5rem;
   align-items: center;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .dot {
@@ -107,26 +113,129 @@ button:hover {
   background: linear-gradient(135deg, #00af8a, #007c91);
 }
 
-.nav-links {
+.brand-logo {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 20% 20%, #a1f7cc, #007c91);
   display: flex;
-  gap: 0.7rem;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(0, 124, 145, 0.2);
 }
 
-.nav-links a {
-  padding: 0.35rem 0.55rem;
-  border-radius: 6px;
+.brand-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00bfa5, #63e2c2);
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+
+.brand-text small {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  color: #475268;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sidebar-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.2rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: var(--muted);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.sidebar-link:hover {
+  border-color: #d0dbe7;
+  background: #f6fbff;
+  color: #0f2040;
+}
+
+.sidebar-link.active {
+  background: #e8f4f7;
+  color: var(--brand-strong);
+  border-color: #c8dce2;
+}
+
+.sidebar-icon {
+  display: inline-flex;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.sidebar-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #e8eef5;
+}
+
+.sidebar-footer-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 
-.nav-links a.active {
-  background: #e8f4f7;
-  color: var(--brand-strong);
+.sidebar-footer-link span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sidebar-footer-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.sidebar-footer-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .nav-user {
-  display: flex;
-  gap: 0.7rem;
-  align-items: center;
+  display: grid;
+  gap: 0.15rem;
+  text-align: right;
 }
 
 .nav-user p,
@@ -135,9 +244,48 @@ button:hover {
 }
 
 .content {
-  padding: 1rem;
-  max-width: 1080px;
-  margin: 0 auto;
+  padding: 5.8rem 1.5rem 1.5rem;
+  max-width: 1160px;
+  margin: 0 auto 0 280px;
+}
+
+.sidebar-title {
+  margin: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 2.75rem;
+}
+
+.icon-button {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: transparent;
+  color: #4d5f7c;
+}
+
+.icon-button:hover {
+  background: #eef4f9;
+}
+
+.icon-button svg {
+  width: 100%;
+  height: 100%;
 }
 
 .cards-grid {
@@ -145,6 +293,65 @@ button:hover {
   display: grid;
   gap: 0.8rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 260px;
+  right: 0;
+  z-index: 9;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+}
+
+.top-left {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.top-icon-link {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: inline-grid;
+  place-items: center;
+  color: #3f4f6a;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: #f3f7fc;
+  position: relative;
+}
+
+.top-icon-link:hover {
+  border-color: #cad7ea;
+  background: #eef4fb;
+}
+
+.top-icon-link svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.notif-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #d93636;
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
 }
 
 .card,
@@ -162,11 +369,19 @@ button:hover {
 
 .panel {
   margin-top: 1rem;
+  display: grid;
+  gap: 0.85rem;
 }
 
 .form-grid {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.8rem;
+}
+
+.form-grid label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #364962;
 }
 
 .simple-list {
@@ -183,6 +398,123 @@ button:hover {
   border-bottom: 1px solid #edf1f6;
 }
 
+.loan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.loan-table th,
+.loan-table td {
+  text-align: left;
+  padding: 0.6rem 0.35rem;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.loan-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.loan-chip {
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+.loan-open {
+  background: #e7f3ff;
+  color: #0c4a85;
+}
+
+.loan-paused {
+  background: #fff0dc;
+  color: #944400;
+}
+
+.loan-settled {
+  background: #e8f4f7;
+  color: #0b2741;
+}
+
+.loan-approved {
+  background: #e7f3ff;
+  color: #0c4a85;
+}
+
+.loan-draft {
+  background: #fff8f0;
+  color: #944400;
+}
+
+.loan-completed {
+  background: #ecefef;
+  color: #2b3e52;
+}
+
+.loan-pending {
+  background: #fff6df;
+  color: #8f5a1c;
+}
+
+.loan-rejected {
+  background: #ffe7e8;
+  color: #a01c1c;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.secondary {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  background: #1f2b3d;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.danger {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  background: #b22d2d;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.btn-spinner {
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 999px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .error-text {
   color: var(--danger);
   font-size: 0.92rem;
@@ -194,8 +526,22 @@ button:hover {
 }
 
 @media (max-width: 860px) {
+  .sidebar {
+    position: static;
+    width: auto;
+    border-right: 0;
+    border-bottom: 0;
+  }
+
   .navbar {
-    flex-wrap: wrap;
+    left: 0;
+  }
+
+  .content {
+    padding-top: 5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin-left: auto;
   }
 
   .simple-list li {

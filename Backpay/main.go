@@ -1,6 +1,7 @@
 package main
 
 import (
+  "flag"
   "log"
   "net/http"
   "os"
@@ -10,7 +11,27 @@ import (
 )
 
 func main() {
-  app := routes.NewApp()
+  initDBOnly := flag.Bool("init-db", false, "initialize database tables and exit")
+  flag.Parse()
+
+  db, err := connectDatabase()
+  if err != nil {
+    log.Fatal("db setup:", err)
+  }
+  if db != nil {
+    defer db.Close()
+  }
+
+  if *initDBOnly {
+    if db == nil {
+      log.Println("database not configured. Set NEON_DATABASE_URL then run: go run . -init-db")
+      return
+    }
+    log.Println("database schema initialized successfully")
+    return
+  }
+
+  app := routes.NewApp(db)
   mux := http.NewServeMux()
   app.Register(mux)
 

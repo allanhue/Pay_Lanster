@@ -1,6 +1,7 @@
 package routes
 
 import (
+  "database/sql"
   "fmt"
   "sync"
 )
@@ -61,6 +62,7 @@ type loginRequest struct {
 }
 
 type App struct {
+  db         *sql.DB
   mu         sync.RWMutex
   users      map[string]User
   userByMail map[string]string
@@ -70,8 +72,9 @@ type App struct {
   seq        int64
 }
 
-func NewApp() *App {
+func NewApp(db *sql.DB) *App {
   app := &App{
+    db:         db,
     users:      make(map[string]User),
     userByMail: make(map[string]string),
     employees:  make(map[string][]Employee),

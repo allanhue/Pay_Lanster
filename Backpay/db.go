@@ -1,86 +1,166 @@
 package main
 
 import (
-  "fmt"
+  "database/sql"
   "os"
-  "sync"
-)
 
-type UserRole string
+  _ "github.com/jackc/pgx/v5/stdlib"
+)
 
 const (
-  RoleSystemAdmin UserRole = "system_admin"
-  RoleOrgAdmin    UserRole = "org_admin"
+  ownerOrgID  = "org_root"
+  ownerUserID = "usr_1"
+  ownerEmail  = "owner@lanster.local"
+  ownerRole   = "system_admin"
 )
-
-type User struct {
-  ID       string   `json:"id"`
-  Name     string   `json:"name"`
-  Email    string   `json:"email"`
-  Password string   `json:"-"`
-  Role     UserRole `json:"role"`
-  OrgID    string   `json:"orgId,omitempty"`
-  OrgName  string   `json:"orgName,omitempty"`
-}
-
-type Employee struct {
-  ID         string  `json:"id"`
-  OrgID      string  `json:"orgId"`
-  FullName   string  `json:"fullName"`
-  Email      string  `json:"email"`
-  Department string  `json:"department"`
-  Salary     float64 `json:"salary"`
-  PayCycle   string  `json:"payCycle"`
-  Status     string  `json:"status"`
-}
-
-type OrgSettings struct {
-  OrgID       string  `json:"orgId"`
-  PayCycle    string  `json:"payCycle"`
-  Currency    string  `json:"currency"`
-  TaxRate     float64 `json:"taxRate"`
-  PensionRate float64 `json:"pensionRate"`
-}
-
-type Store struct {
-  mu         sync.RWMutex
-  users      map[string]User
-  userByMail map[string]string
-  employees  map[string][]Employee
-  settings   map[string]OrgSettings
-  orgNames   map[string]string
-  seq        int64
-}
-
-func NewStore() *Store {
-  s := &Store{
-    users:      make(map[string]User),
-    userByMail: make(map[string]string),
-    employees:  make(map[string][]Employee),
-    settings:   make(map[string]OrgSettings),
-    orgNames:   make(map[string]string),
-    seq:        1,
-  }
-
-  // Seed owner account for platform control.
-  owner := User{
-    ID:       "usr_1",
-    Name:     "System Owner",
-    Email:    "owner@lanster.local",
-    Password: "admin123",
-    Role:     RoleSystemAdmin,
-  }
-  s.users[owner.ID] = owner
-  s.userByMail[owner.Email] = owner.ID
-  s.seq = 2
-
-  return s
-}
-
-func nextID(prefix string, n int64) string {
-  return fmt.Sprintf("%s_%d", prefix, n)
-}
 
 func databaseURL() string {
   return os.Getenv("NEON_DATABASE_URL")
+}
+
+func connectDatabase() (*sql.DB, error) {
+  url := databaseURL()
+  if url == "" {
+    return nil, nil
+  }
+
+  db, err := sql.Open("pgx", url)
+  if err != nil {
+    return nil, err
+  }
+
+  if err := db.Ping(); err != nil {
+    db.Close()
+    return nil, err
+  }
+
+  if err := InitSchema(db); err != nil {
+    db.Close()
+    return nil, err
+  }
+
+  if err := seedOwner(db); err != nil {
+    db.Close()
+    return nil, err
+  }
+
+  return db, nil
+}
+
+func InitSchema(db *sql.DB) error {
+  statements := []string{
+    `CREATE TABLE IF NOT EXISTS organizations (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS employees (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      full_name TEXT NOT NULL,
+      email TEXT,
+      department TEXT,
+      salary NUMERIC NOT NULL,
+      pay_cycle TEXT,
+      status TEXT DEFAULT 'active',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS payruns (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      period TEXT,
+      payday DATE,
+      net_payroll NUMERIC,
+      employees INT,
+      status TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS loans (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      employee TEXT NOT NULL,
+      amount NUMERIC NOT NULL,
+      outstanding NUMERIC NOT NULL,
+      next_payment DATE,
+      status TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS benefits (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      name TEXT NOT NULL,
+      amount NUMERIC,
+      frequency TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS approvals (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      module TEXT NOT NULL,
+      reference_id TEXT NOT NULL,
+      requested_by TEXT,
+      status TEXT DEFAULT 'pending',
+      decided_by TEXT,
+      decided_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS payslips (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      employee_name TEXT NOT NULL,
+      period TEXT NOT NULL,
+      gross_pay NUMERIC NOT NULL,
+      deductions NUMERIC NOT NULL,
+      net_pay NUMERIC NOT NULL,
+      approval_status TEXT DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS org_settings (
+      org_id TEXT PRIMARY KEY REFERENCES organizations(id),
+      country_code TEXT DEFAULT 'KE',
+      entity_name TEXT,
+      entity_tax_id TEXT,
+      pay_cycle TEXT,
+      currency TEXT,
+      tax_rate NUMERIC,
+      pension_rate NUMERIC
+    )`,
+  }
+
+  for _, stmt := range statements {
+    if _, err := db.Exec(stmt); err != nil {
+      return err
+    }
+  }
+
+  return nil
+}
+
+func seedOwner(db *sql.DB) error {
+  if _, err := db.Exec(`INSERT INTO organizations (id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING`, ownerOrgID, "Payroll Lanster"); err != nil {
+    return err
+  }
+
+  if _, err := db.Exec(
+    `INSERT INTO users (id, org_id, name, email, password, role) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
+    ownerUserID,
+    ownerOrgID,
+    "System Owner",
+    ownerEmail,
+    "admin123",
+    ownerRole,
+  ); err != nil {
+    return err
+  }
+
+  return nil
 }

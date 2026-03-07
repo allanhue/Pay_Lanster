@@ -15,11 +15,12 @@ export default function EmployeePage() {
   const [salary, setSalary] = useState("");
   const [payCycle, setPayCycle] = useState<"monthly" | "biweekly">("monthly");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
 
   const refresh = async (orgId: string) => {
     const list = await api.listEmployees(orgId);
-    setEmployees(list);
+    setEmployees(Array.isArray(list) ? list : []);
   };
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function EmployeePage() {
     }
 
     setError("");
+    setSaving(true);
     try {
       await api.addEmployee({
         orgId: session.orgId,
@@ -64,6 +66,8 @@ export default function EmployeePage() {
       await refresh(session.orgId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add employee");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -103,13 +107,16 @@ export default function EmployeePage() {
               <option value="monthly">Monthly</option>
               <option value="biweekly">Biweekly</option>
             </select>
-            <button type="submit">Add Employee</button>
+            <button className={saving ? "btn-loading" : ""} disabled={saving} type="submit">
+              {saving && <span className="btn-spinner" />}
+              {saving ? "Saving..." : "Add Employee"}
+            </button>
           </form>
         </article>
 
         <article className="panel">
           <h2>Employee List</h2>
-          {employees.length === 0 ? (
+          {(!Array.isArray(employees) || employees.length === 0) ? (
             <p>No employees added yet.</p>
           ) : (
             <ul className="simple-list">
