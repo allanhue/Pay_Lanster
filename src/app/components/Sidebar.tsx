@@ -78,7 +78,7 @@ export default function Sidebar({ session }: SidebarProps) {
     { href: "/pages/Payrun", label: "Payrun", icon: moduleIcons.payrun },
     { href: "/pages/Employee", label: "Employees", icon: moduleIcons.employees },
     { href: "/pages/Loans", label: "Loans", icon: moduleIcons.loans },
-    { href: "/pages/Benefits and Allowances", label: "Benefits & Allowances", icon: moduleIcons.benefits },
+    { href: "/pages/benefits-and-allowances", label: "Benefits & Allowances", icon: moduleIcons.benefits },
     { href: "/pages/Approvals", label: "Approvals", icon: moduleIcons.approvals },
     { href: "/pages/Payslips", label: "Payslips", icon: moduleIcons.payslips },
     { href: "/pages/Reports", label: "Reports", icon: moduleIcons.reports },

@@ -86,16 +86,16 @@ button:hover {
   left: 0;
   bottom: 0;
   width: 260px;
+  height: 100vh;
   z-index: 10;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.6rem;
-  align-content: start;
   padding: 1rem 0.85rem 0.85rem;
   border-right: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(8px);
   overflow: hidden;
-  grid-template-rows: auto 1fr auto;
 }
 
 .brand {
@@ -159,10 +159,11 @@ button:hover {
 
 .sidebar-scroll {
   min-height: 0;
-  height: 100%;
+  flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 0.2rem;
+  padding-bottom: 0.4rem;
 }
 
 .sidebar-scroll::-webkit-scrollbar {
@@ -210,7 +211,7 @@ button:hover {
 }
 
 .sidebar-footer {
-  margin-top: auto;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
