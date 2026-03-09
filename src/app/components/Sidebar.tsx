@@ -73,8 +73,8 @@ const moduleIcons = {
 export default function Sidebar({ session }: SidebarProps) {
   const pathname = usePathname();
   const profileHref = session.role === "system_admin" ? "/system_admin/Configuration" : "/pages/Profile";
-  const orgLabel = session.role === "system_admin" ? "System Admin" : session.orgName;
-  const userLabel = session.role === "system_admin" ? "Owner Account" : session.name;
+  const orgLabel = session.role === "system_admin" ? "Payroll Lanster" : session.orgName;
+  const orgMeta = session.role === "system_admin" ? "System Admin" : session.name;
 
   const orgLinks = [
     { href: "/pages/Dashboard", label: "Dashboard", icon: moduleIcons.dashboard },
@@ -99,18 +99,16 @@ export default function Sidebar({ session }: SidebarProps) {
 
   return (
     <aside className="sidebar">
-      <Link className="brand" href={profileHref}>
-        <span className="brand-avatar" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
-            <path d="M5.2 18a6.8 6.8 0 0113.6 0" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
-          </svg>
-        </span>
+      <div className="brand">
+        <Link className="brand-logo" href={session.role === "system_admin" ? "/system_admin/Dasboard" : "/pages/Dashboard"}>
+          <span className="dot" />
+          <span className="brand-chip" />
+        </Link>
         <div className="brand-text">
           <span className="brand-name">{orgLabel}</span>
-          <small>{userLabel}</small>
+          <small>{orgMeta}</small>
         </div>
-      </Link>
+      </div>
       <div className="sidebar-scroll">
         <nav className="nav-links">
           {links.map((link) => {

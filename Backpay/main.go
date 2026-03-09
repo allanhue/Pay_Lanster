@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"backpay/routes"
 
@@ -53,7 +55,7 @@ func main() {
 	mux := http.NewServeMux()
 	app.Register(mux)
 
-	if err := http.ListenAndServe(":8080", WithCORS(mux)); err != nil {
+	if err := http.ListenAndServe(":8080", WithLogging(WithCORS(mux))); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -110,4 +112,23 @@ func isAllowedOrigin(origin string, allowed []string) bool {
 		}
 	}
 	return false
+}
+
+type responseRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *responseRecorder) WriteHeader(status int) {
+	r.status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
+func WithLogging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
+		start := time.Now()
+		next.ServeHTTP(rec, r)
+		log.Printf("%s %s %d %s", r.Method, r.URL.RequestURI(), rec.status, fmt.Sprintf("%dms", time.Since(start).Milliseconds()))
+	})
 }

@@ -102,27 +102,35 @@ button:hover {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f2;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #f8fbff, #eef6fb);
+  padding: 0.2rem 0.15rem 0.6rem;
   color: var(--text);
 }
 
-.brand-avatar {
-  flex: 0 0 auto;
-  width: 2.6rem;
-  height: 2.6rem;
-  display: inline-grid;
-  place-items: center;
+.dot {
+  width: 12px;
+  height: 12px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #0f8a9d, #19aa8c);
-  color: #fff;
+  background: linear-gradient(135deg, #00af8a, #007c91);
 }
 
-.brand-avatar svg {
-  width: 1.3rem;
-  height: 1.3rem;
+.brand-logo {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 20% 20%, #a1f7cc, #007c91);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(0, 124, 145, 0.2);
+}
+
+.brand-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00bfa5, #63e2c2);
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
 .brand-text {
@@ -135,7 +143,7 @@ button:hover {
 .brand-name {
   font-size: 0.9rem;
   font-weight: 700;
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
 }
 
 .brand-text small {
