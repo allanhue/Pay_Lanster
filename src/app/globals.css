@@ -100,55 +100,50 @@ button:hover {
 
 .brand {
   display: flex;
-  gap: 0.5rem;
   align-items: center;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f2;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fbff, #eef6fb);
+  color: var(--text);
 }
 
-.dot {
-  width: 12px;
-  height: 12px;
+.brand-avatar {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: inline-grid;
+  place-items: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, #00af8a, #007c91);
+  background: linear-gradient(135deg, #0f8a9d, #19aa8c);
+  color: #fff;
 }
 
-.brand-logo {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: radial-gradient(circle at 20% 20%, #a1f7cc, #007c91);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 24px rgba(0, 124, 145, 0.2);
-}
-
-.brand-chip {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #00bfa5, #63e2c2);
-  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5);
+.brand-avatar svg {
+  width: 1.3rem;
+  height: 1.3rem;
 }
 
 .brand-text {
   display: flex;
   flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
 .brand-name {
   font-size: 0.9rem;
-  letter-spacing: 0.14em;
   font-weight: 700;
+  letter-spacing: 0;
 }
 
 .brand-text small {
-  text-transform: none;
-  letter-spacing: 0.04em;
   color: #475268;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-links {
@@ -253,6 +248,17 @@ button:hover {
 .nav-user p,
 .nav-user small {
   margin: 0;
+  font-weight: 500;
+}
+
+.nav-user p {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.nav-user small {
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 .content {
@@ -368,22 +374,17 @@ button:hover {
   height: 64px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 0.8rem 1rem;
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
 }
 
-.top-left {
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
 .top-right {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.75rem;
 }
 
 .top-icon-link {
@@ -716,16 +717,24 @@ button:hover {
   font-size: 0.92rem;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .sidebar {
     position: static;
     width: auto;
-    border-right: 0;
+    height: auto;
+    overflow: visible;
     border-bottom: 0;
   }
 
   .navbar {
     left: 0;
+    padding: 0.75rem 1rem;
+    height: auto;
+    min-height: 56px;
+  }
+
+  .top-right {
+    gap: 0.5rem;
   }
 
   .content {

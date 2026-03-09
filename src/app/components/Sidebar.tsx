@@ -72,6 +72,9 @@ const moduleIcons = {
 
 export default function Sidebar({ session }: SidebarProps) {
   const pathname = usePathname();
+  const profileHref = session.role === "system_admin" ? "/system_admin/Configuration" : "/pages/Profile";
+  const orgLabel = session.role === "system_admin" ? "System Admin" : session.orgName;
+  const userLabel = session.role === "system_admin" ? "Owner Account" : session.name;
 
   const orgLinks = [
     { href: "/pages/Dashboard", label: "Dashboard", icon: moduleIcons.dashboard },
@@ -82,7 +85,7 @@ export default function Sidebar({ session }: SidebarProps) {
     { href: "/pages/Approvals", label: "Approvals", icon: moduleIcons.approvals },
     { href: "/pages/Payslips", label: "Payslips", icon: moduleIcons.payslips },
     { href: "/pages/Reports", label: "Reports", icon: moduleIcons.reports },
-    { href: "/pages/Intergrations", label: "Integrations", icon: moduleIcons.support },
+    { href: "/pages/Integrations", label: "Integrations", icon: moduleIcons.support },
     { href: "/pages/Settings", label: "Payroll Setup", icon: moduleIcons.settings },
   ];
 
@@ -96,15 +99,18 @@ export default function Sidebar({ session }: SidebarProps) {
 
   return (
     <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-logo">
-          <span className="dot" />
-          <span className="brand-chip" />
-        </div>
+      <Link className="brand" href={profileHref}>
+        <span className="brand-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M5.2 18a6.8 6.8 0 0113.6 0" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+          </svg>
+        </span>
         <div className="brand-text">
-          <span className="brand-name">Payroll Lanster</span>
+          <span className="brand-name">{orgLabel}</span>
+          <small>{userLabel}</small>
         </div>
-      </div>
+      </Link>
       <div className="sidebar-scroll">
         <nav className="nav-links">
           {links.map((link) => {
@@ -128,7 +134,7 @@ export default function Sidebar({ session }: SidebarProps) {
           </span>
           <span>Help</span>
         </Link>
-        <Link className="sidebar-footer-link" href={session.role === "system_admin" ? "/system_admin/Configuration" : "/pages/Profile"}>
+        <Link className="sidebar-footer-link" href={profileHref}>
           <span className="sidebar-footer-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="7" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
