@@ -196,43 +196,108 @@ export default function Navbar({ session }: NavbarProps) {
           </button>
 
           <div className="nav-user">
-            <p>{session.name}</p>
-            <small>{session.role === "system_admin" ? "Owner" : "Org Admin"}</small>
+            <div className="nav-user-info">
+              <p>{session.name}</p>
+              <small>{session.role === "system_admin" ? "Owner" : "Org Admin"}</small>
+            </div>
+            <button
+              className="nav-logout-btn"
+              onClick={() => {
+                clearSession();
+                router.push("/auth/login");
+              }}
+              type="button"
+              title="Logout"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <polyline points="16,17 21,12 16,7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <line x1="21" y1="12" x2="9" y2="12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
-
-          <button
-            onClick={() => {
-              clearSession();
-              router.push("/auth/login");
-            }}
-            type="button"
-          >
-            Logout
-          </button>
         </div>
       </header>
 
       <aside className={`notif-drawer ${openDrawer ? "open" : ""}`}>
         <div className="notif-header">
-          <h3>Notifications</h3>
-          <button className="drawer-close" onClick={() => setOpenDrawer(false)} type="button">
-            x
-          </button>
+          <div className="notif-header-content">
+            <h3>Notifications</h3>
+            <span className="notif-count">{notifications.length}</span>
+          </div>
+          <div className="notif-header-actions">
+            <button 
+              className="clear-all-btn" 
+              onClick={() => setNotifications([])} 
+              type="button"
+              title="Clear all notifications"
+            >
+              Clear All
+            </button>
+            <button className="drawer-close" onClick={() => setOpenDrawer(false)} type="button" title="Close">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
         </div>
         {notifications.length === 0 ? (
-          <p className="muted">No notifications.</p>
+          <div className="notif-empty">
+            <div className="notif-empty-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4a5 5 0 00-5 5v2.2l-1.3 2.2A1 1 0 006.6 15h10.8a1 1 0 00.9-1.6L17 11.2V9a5 5 0 00-5-5z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M10 17a2 2 0 004 0" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
+              </svg>
+            </div>
+            <p className="notif-empty-title">No notifications</p>
+            <p className="notif-empty-desc">You're all caught up! We'll notify you when there are updates.</p>
+          </div>
         ) : (
           <ul className="notif-list">
             {notifications.map((item) => (
-              <li className="notif-item" key={item.id}>
-                <div className="notif-meta">
-                  <span className={`notif-tag tag-${item.tag}`}>{item.tag}</span>
-                  <button className="notif-remove" onClick={() => removeNotification(item.id)} type="button">
-                    x
-                  </button>
+              <li className={`notif-item notif-${item.tag}`} key={item.id}>
+                <div className="notif-content">
+                  <div className="notif-header-item">
+                    <div className="notif-icon">
+                      {item.tag === "payrun" && (
+                        <svg viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                          <path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      )}
+                      {item.tag === "payslip" && (
+                        <svg viewBox="0 0 24 24">
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                          <polyline points="14,2 14,8 20,8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                        </svg>
+                      )}
+                      {item.tag === "approval" && (
+                        <svg viewBox="0 0 24 24">
+                          <path d="M9 11l3 3L22 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="notif-text">
+                      <h4>{item.title}</h4>
+                      <p>{item.detail}</p>
+                    </div>
+                  </div>
+                  <div className="notif-meta">
+                    <span className={`notif-tag tag-${item.tag}`}>{item.tag}</span>
+                    <span className="notif-time">Just now</span>
+                    <button 
+                      className="notif-remove" 
+                      onClick={() => removeNotification(item.id)} 
+                      type="button"
+                      title="Remove notification"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <strong>{item.title}</strong>
-                <p>{item.detail}</p>
               </li>
             ))}
           </ul>
