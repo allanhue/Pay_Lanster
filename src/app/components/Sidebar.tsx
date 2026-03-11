@@ -68,6 +68,24 @@ const moduleIcons = {
       <path d="M9.5 16h5M11 18v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ),
+  payments: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M7 8h10M7 12h10M7 16h6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="17" cy="16" r="1" fill="currentColor" />
+    </svg>
+  ),
+  calendar: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="1.8" />
+      <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="1.8" />
+      <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="6" y="14" width="2" height="2" fill="currentColor" />
+      <rect x="11" y="14" width="2" height="2" fill="currentColor" />
+      <rect x="16" y="14" width="2" height="2" fill="currentColor" />
+    </svg>
+  ),
 };
 
 export default function Sidebar({ session }: SidebarProps) {
@@ -86,12 +104,15 @@ export default function Sidebar({ session }: SidebarProps) {
     { href: "/pages/Payslips", label: "Payslips", icon: moduleIcons.payslips },
     { href: "/pages/Reports", label: "Reports", icon: moduleIcons.reports },
     { href: "/pages/Integrations", label: "Integrations", icon: moduleIcons.support },
+    { href: "/pages/Calendar", label: "Calendar", icon: moduleIcons.calendar },
     { href: "/pages/Settings", label: "Payroll Setup", icon: moduleIcons.settings },
   ];
 
   const systemLinks = [
     { href: "/system_admin/Dasboard", label: "Overview", icon: moduleIcons.dashboard },
     { href: "/system_admin/Analytics", label: "Analytics", icon: moduleIcons.reports },
+    { href: "/system_admin/Payments", label: "Payments", icon: moduleIcons.payments },
+    { href: "/system_admin/Calendar", label: "Calendar", icon: moduleIcons.calendar },
     { href: "/system_admin/Configuration", label: "Configuration", icon: moduleIcons.settings },
   ];
 
@@ -123,15 +144,6 @@ export default function Sidebar({ session }: SidebarProps) {
         </nav>
       </div>
       <div className="sidebar-footer">
-        <Link className="sidebar-footer-link" href="/pages/Support">
-          <span className="sidebar-footer-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M11 16h2M10 9a2 2 0 114 0c0 2-2 2.2-2 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-          </span>
-          <span>Help</span>
-        </Link>
         <Link className="sidebar-footer-link" href={profileHref}>
           <span className="sidebar-footer-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true">
