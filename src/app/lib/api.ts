@@ -130,6 +130,52 @@ export type ProjectIntegrationStatus = {
   message: string;
 };
 
+export type DemoData = {
+  loans: {
+    id: string;
+    employee: string;
+    amount: number;
+    outstanding: number;
+    nextPayment: string;
+    status: "open" | "paused" | "settled";
+  }[];
+  benefits: {
+    name: string;
+    amount: number;
+    frequency: "Monthly" | "One-time" | "Annual";
+    taxable: boolean;
+    status: "active" | "paused";
+    effectiveDate: string;
+  }[];
+  payslips: {
+    id: string;
+    employee: string;
+    email: string;
+    period: string;
+    gross: number;
+    deductions: number;
+    net: number;
+    approval: "pending" | "approved" | "rejected";
+  }[];
+  reports: {
+    id: string;
+    title: string;
+    period: string;
+    category: string;
+    status: "ready" | "draft";
+    updatedAt: string;
+  }[];
+  calendar: {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    time: string;
+    type: "payroll" | "holiday" | "meeting" | "deadline" | "reminder";
+    status: "upcoming" | "completed" | "cancelled";
+  }[];
+};
+
 export const api = {
   signup: (body: {
     name: string;
@@ -145,6 +191,11 @@ export const api = {
 
   addEmployee: (body: Omit<PayrollEmployee, "id" | "status">) =>
     request<PayrollEmployee>("/api/employees", { method: "POST", body: JSON.stringify(body) }),
+
+  deleteEmployee: (orgId: string, id: string) =>
+    request<{ deleted: boolean }>(`/api/employees?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
 
   orgDashboard: (orgId: string) => request<DashboardStats>(`/api/dashboard/org?orgId=${encodeURIComponent(orgId)}`),
 
@@ -174,4 +225,6 @@ export const api = {
 
   sendProjectReport: (body: { orgId: string; period: string; reportUrl?: string; summary?: string }) =>
     request<{ queued: boolean; message: string }>("/api/integrations/project/report", { method: "POST", body: JSON.stringify(body) }),
+
+  getDemoData: () => request<DemoData>("/api/demo/data"),
 };

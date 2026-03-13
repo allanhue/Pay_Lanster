@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import { api } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 type Benefit = {
@@ -14,15 +15,9 @@ type Benefit = {
   effectiveDate: string;
 };
 
-const defaults: Benefit[] = [
-  { name: "Transport Allowance", amount: 150, frequency: "Monthly", taxable: true, status: "active", effectiveDate: "2026-01-01" },
-  { name: "Meal Allowance", amount: 90, frequency: "Monthly", taxable: false, status: "active", effectiveDate: "2026-02-15" },
-  { name: "Wellness Support", amount: 280, frequency: "Annual", taxable: false, status: "paused", effectiveDate: "2025-11-01" },
-];
-
 export default function BenefitsAndAllowancesPage() {
   const [session, setSession] = useState<UserSession | null>(null);
-  const [benefits, setBenefits] = useState<Benefit[]>(defaults);
+  const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [frequency, setFrequency] = useState<Benefit["frequency"]>("Monthly");
@@ -43,6 +38,11 @@ export default function BenefitsAndAllowancesPage() {
       return;
     }
     setSession(current);
+    api.getDemoData().then((data) => {
+      setBenefits(Array.isArray(data.benefits) ? (data.benefits as Benefit[]) : []);
+    }).catch(() => {
+      setBenefits([]);
+    });
   }, [router]);
 
   const handleAdd = (event: FormEvent) => {
@@ -60,6 +60,10 @@ export default function BenefitsAndAllowancesPage() {
     setStatus("active");
     setEffectiveDate("");
     setTimeout(() => setAdding(false), 250);
+  };
+
+  const removeBenefit = (name: string) => {
+    setBenefits((prev) => prev.filter((item) => item.name !== name));
   };
 
   if (!session) {
@@ -190,6 +194,7 @@ export default function BenefitsAndAllowancesPage() {
                   <th>Taxable</th>
                   <th>Status</th>
                   <th>Effective</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -208,6 +213,11 @@ export default function BenefitsAndAllowancesPage() {
                       <span className={`status-badge status-${benefit.status}`}>{benefit.status}</span>
                     </td>
                     <td>{benefit.effectiveDate || "-"}</td>
+                    <td>
+                      <button className="danger" type="button" onClick={() => removeBenefit(benefit.name)}>
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

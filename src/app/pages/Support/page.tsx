@@ -134,19 +134,6 @@ export default function SupportPage() {
                 </div>
               </div>
               
-              <div className="form-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    required
-                    disabled={loading}
-                  />
-                  <span className="checkbox-text">
-                    I understand that support responses will be sent to my email address
-                  </span>
-                </label>
-              </div>
-              
               <div className="form-actions">
                 <button
                   type="button"
@@ -193,22 +180,6 @@ export default function SupportPage() {
               </div>
             </div>
 
-            <div className="panel">
-              <div className="panel-header">
-                <h3>Quick Links</h3>
-              </div>
-              <ul className="simple-list">
-                <li>
-                  <a href="/pages/Settings" className="link">Payroll Setup Guide</a>
-                </li>
-                <li>
-                  <a href="/pages/Employee" className="link">Managing Employees</a>
-                </li>
-                <li>
-                  <a href="/pages/Payrun" className="link">Running Payroll</a>
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </section>

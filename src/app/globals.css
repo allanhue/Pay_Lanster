@@ -95,7 +95,16 @@ button:hover {
   border-right: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(8px);
-  overflow: hidden;
+  overflow: visible;
+  transition: width 0.45s ease;
+}
+
+.sidebar.collapsed {
+  width: 84px;
+}
+
+.sidebar.collapsed .brand-text {
+  display: none;
 }
 
 .brand {
@@ -104,6 +113,36 @@ button:hover {
   gap: 0.75rem;
   padding: 0.2rem 0.15rem 0.6rem;
   color: var(--text);
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 0.9rem;
+  right: -0.9rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #3f4f6a;
+  border: 1px solid #d9e0eb;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 18px rgba(16, 46, 82, 0.12);
+}
+
+.sidebar-toggle:hover {
+  border-color: #cad7ea;
+  background: #eef4fb;
+}
+
+.sidebar.collapsed .sidebar-toggle svg {
+  transform: rotate(180deg);
+}
+
+.sidebar-toggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: transform 0.2s ease;
 }
 
 .dot {
@@ -150,7 +189,7 @@ button:hover {
   color: #475268;
   font-size: 0.78rem;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 }
 
@@ -188,6 +227,15 @@ button:hover {
   color: var(--muted);
   border: 1px solid transparent;
   transition: all 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: 0.55rem;
+}
+
+.sidebar.collapsed .sidebar-link span:last-child {
+  display: none;
 }
 
 .sidebar-link:hover {
@@ -232,6 +280,10 @@ button:hover {
   color: var(--muted);
 }
 
+.sidebar.collapsed .sidebar-footer-link span:last-child {
+  display: none;
+}
+
 .sidebar-footer-link span {
   display: inline-flex;
   align-items: center;
@@ -273,6 +325,11 @@ button:hover {
   padding: 5.8rem 1.5rem 1.5rem;
   max-width: 1160px;
   margin: 0 auto 0 280px;
+  transition: margin-left 0.45s ease;
+}
+
+.sidebar-collapsed .content {
+  margin-left: 104px;
 }
 
 .content.content-wide {
@@ -394,6 +451,11 @@ button:hover {
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
+  transition: left 0.45s ease;
+}
+
+.sidebar-collapsed .navbar {
+  left: 84px;
 }
 
 .top-right {
@@ -424,6 +486,18 @@ button:hover {
   height: 1.2rem;
 }
 
+.top-icon-link.notif-button {
+  background: #fff1f0;
+  border-color: #f5c7c4;
+  color: #9c2b2b;
+  box-shadow: 0 0 0 3px rgba(217, 54, 54, 0.08);
+}
+
+.top-icon-link.notif-button:hover {
+  background: #ffe6e3;
+  border-color: #f1b1ab;
+}
+
 .notif-dot {
   width: 0.45rem;
   height: 0.45rem;
@@ -432,6 +506,19 @@ button:hover {
   position: absolute;
   top: 0.35rem;
   right: 0.35rem;
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 54, 54, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(217, 54, 54, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 54, 54, 0);
+  }
 }
 
 .notif-drawer {
@@ -1051,6 +1138,41 @@ button:hover {
   flex-wrap: wrap;
 }
 
+.file-type-select {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  min-height: 38px;
+}
+
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+.export-card {
+  border: 1px solid #edf1f6;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #fff;
+  display: grid;
+  gap: 0.5rem;
+  box-shadow: 0 6px 16px rgba(16, 46, 82, 0.06);
+}
+
+.export-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.export-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .meta-text {
   color: var(--muted);
   font-size: 0.85rem;
@@ -1202,6 +1324,26 @@ button:hover {
 @media (max-width: 900px) {
   .split-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .sidebar {
+    width: 84px;
+  }
+
+  .sidebar .brand-text,
+  .sidebar .sidebar-link span:last-child,
+  .sidebar .sidebar-footer-link span:last-child {
+    display: none;
+  }
+
+  .navbar {
+    left: 84px;
+  }
+
+  .content {
+    margin-left: 104px;
   }
 }
 
@@ -2624,6 +2766,11 @@ button:hover {
 .action-btn svg {
   width: 1rem;
   height: 1rem;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .edit-btn:hover {

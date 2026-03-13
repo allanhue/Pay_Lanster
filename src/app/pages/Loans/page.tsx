@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import { api } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 type LoanRecord = {
@@ -14,20 +15,17 @@ type LoanRecord = {
   status: "open" | "paused" | "settled";
 };
 
-const initialLoans: LoanRecord[] = [
-  { id: "LN-2034", employee: "Jane Adams", amount: 5400, outstanding: 1600, nextPayment: "Apr 28", status: "open" },
-  { id: "LN-2035", employee: "Mark Ellis", amount: 12000, outstanding: 4000, nextPayment: "May 05", status: "paused" },
-  { id: "LN-2036", employee: "Lena Ortiz", amount: 3200, outstanding: 0, nextPayment: "-", status: "settled" },
-];
-
 export default function LoansPage() {
   const [session, setSession] = useState<UserSession | null>(null);
-  const [loans, setLoans] = useState<LoanRecord[]>(initialLoans);
+  const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loanEmployee, setLoanEmployee] = useState("");
   const [loanAmount, setLoanAmount] = useState("");
   const [loanOutstanding, setLoanOutstanding] = useState("");
   const [loanNextPayment, setLoanNextPayment] = useState("");
+  const [loanPurpose, setLoanPurpose] = useState("");
+  const [loanTenure, setLoanTenure] = useState("");
+  const [loanRate, setLoanRate] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -41,6 +39,11 @@ export default function LoansPage() {
       return;
     }
     setSession(current);
+    api.getDemoData().then((data) => {
+      setLoans(Array.isArray(data.loans) ? (data.loans as LoanRecord[]) : []);
+    }).catch(() => {
+      setLoans([]);
+    });
   }, [router]);
 
   const settleLoan = (id: string) => {
@@ -84,7 +87,14 @@ export default function LoansPage() {
     setLoanAmount("");
     setLoanOutstanding("");
     setLoanNextPayment("");
+    setLoanPurpose("");
+    setLoanTenure("");
+    setLoanRate("");
     setShowForm(false);
+  };
+
+  const removeLoan = (id: string) => {
+    setLoans((prev) => prev.filter((loan) => loan.id !== id));
   };
 
   const globeSummary = useMemo(
@@ -163,9 +173,14 @@ export default function LoansPage() {
                     </td>
                     <td>
                       {loan.status !== "settled" && (
-                        <button className="secondary" onClick={() => settleLoan(loan.id)} type="button">
-                          Settle
-                        </button>
+                        <div className="inline-actions">
+                          <button className="secondary" onClick={() => settleLoan(loan.id)} type="button">
+                            Settle
+                          </button>
+                          <button className="danger" onClick={() => removeLoan(loan.id)} type="button">
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -211,6 +226,26 @@ export default function LoansPage() {
                     />
                   </div>
                   <div className="form-group">
+                    <label htmlFor="loanPurpose">Purpose</label>
+                    <input
+                      id="loanPurpose"
+                      value={loanPurpose}
+                      onChange={(event) => setLoanPurpose(event.target.value)}
+                      placeholder="e.g., Education, Medical"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="loanTenure">Tenure (months)</label>
+                    <input
+                      id="loanTenure"
+                      type="number"
+                      min={1}
+                      value={loanTenure}
+                      onChange={(event) => setLoanTenure(event.target.value)}
+                      placeholder="12"
+                    />
+                  </div>
+                  <div className="form-group">
                     <label htmlFor="loanOutstanding">Outstanding</label>
                     <input
                       id="loanOutstanding"
@@ -228,6 +263,17 @@ export default function LoansPage() {
                       value={loanNextPayment}
                       onChange={(event) => setLoanNextPayment(event.target.value)}
                       placeholder="Apr 30"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="loanRate">Interest Rate (%)</label>
+                    <input
+                      id="loanRate"
+                      type="number"
+                      min={0}
+                      value={loanRate}
+                      onChange={(event) => setLoanRate(event.target.value)}
+                      placeholder="8"
                     />
                   </div>
                   <div className="form-actions">

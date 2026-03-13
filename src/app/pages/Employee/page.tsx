@@ -31,6 +31,7 @@ export default function EmployeePage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<PayrollEmployee | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("all");
   const [filterPayCycle, setFilterPayCycle] = useState("all");
@@ -192,6 +193,21 @@ export default function EmployeePage() {
     } else {
       setSortBy(column);
       setSortOrder("asc");
+    }
+  };
+
+  const onDeleteEmployee = async (employee: PayrollEmployee) => {
+    if (!session?.orgId) return;
+    const confirmed = window.confirm(`Delete ${employee.fullName}? This cannot be undone.`);
+    if (!confirmed) return;
+    setDeleting(employee.id);
+    try {
+      await api.deleteEmployee(session.orgId, employee.id);
+      setEmployees((prev) => prev.filter((item) => item.id !== employee.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete employee");
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -631,7 +647,7 @@ export default function EmployeePage() {
                         <span>Employee</span>
                         {sortBy === "name" && (
                           <span className="sort-indicator">
-                            {sortOrder === "asc" ? "?" : "?"}
+                            {sortOrder === "asc" ? "^" : "v"}
                           </span>
                         )}
                       </div>
@@ -641,7 +657,7 @@ export default function EmployeePage() {
                         <span>Email</span>
                         {sortBy === "email" && (
                           <span className="sort-indicator">
-                            {sortOrder === "asc" ? "?" : "?"}
+                            {sortOrder === "asc" ? "^" : "v"}
                           </span>
                         )}
                       </div>
@@ -651,7 +667,7 @@ export default function EmployeePage() {
                         <span>Department</span>
                         {sortBy === "department" && (
                           <span className="sort-indicator">
-                            {sortOrder === "asc" ? "?" : "?"}
+                            {sortOrder === "asc" ? "^" : "v"}
                           </span>
                         )}
                       </div>
@@ -661,7 +677,7 @@ export default function EmployeePage() {
                         <span>Pay Cycle</span>
                         {sortBy === "payCycle" && (
                           <span className="sort-indicator">
-                            {sortOrder === "asc" ? "?" : "?"}
+                            {sortOrder === "asc" ? "^" : "v"}
                           </span>
                         )}
                       </div>
@@ -671,7 +687,7 @@ export default function EmployeePage() {
                         <span>Annual Salary</span>
                         {sortBy === "salary" && (
                           <span className="sort-indicator">
-                            {sortOrder === "asc" ? "?" : "?"}
+                            {sortOrder === "asc" ? "^" : "v"}
                           </span>
                         )}
                       </div>
@@ -739,7 +755,12 @@ export default function EmployeePage() {
                               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor" strokeWidth="1.5" />
                             </svg>
                           </button>
-                          <button className="action-btn delete-btn" title="Delete Employee">
+                          <button
+                            className="action-btn delete-btn"
+                            title="Delete Employee"
+                            onClick={() => onDeleteEmployee(employee)}
+                            disabled={deleting === employee.id}
+                          >
                             <svg viewBox="0 0 24 24">
                               <polyline points="3,6 5,6 21,6" fill="none" stroke="currentColor" strokeWidth="1.5" />
                               <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" fill="none" stroke="currentColor" strokeWidth="1.5" />

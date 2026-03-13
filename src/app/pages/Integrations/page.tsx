@@ -50,10 +50,10 @@ export default function IntegrationsPage() {
               {projectStatus?.connected ? "Connected" : "Not connected"}
             </span>
           </div>
-          <div className="info-card">
+          {/* <div className="info-card">
             <p>{projectStatus?.message || "PROJECT_APP is not configured yet."}</p>
             <p className="muted-text">Base URL: {projectStatus?.baseUrl || "—"}</p>
-          </div>
+          </div> */}
         </div>
         <article className="panel">
           <table className="loan-table">

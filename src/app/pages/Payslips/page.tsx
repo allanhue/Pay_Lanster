@@ -18,15 +18,9 @@ type Payslip = {
   approval: "pending" | "approved" | "rejected";
 };
 
-const initialPayslips: Payslip[] = [
-  { id: "PS-1201", employee: "Jane Adams", email: "jane.adams@company.com", period: "Apr 2026", gross: 5200, deductions: 980, net: 4220, approval: "pending" },
-  { id: "PS-1202", employee: "Mark Ellis", email: "mark.ellis@company.com", period: "Apr 2026", gross: 6100, deductions: 1245, net: 4855, approval: "approved" },
-  { id: "PS-1203", employee: "Lena Ortiz", email: "lena.ortiz@company.com", period: "Apr 2026", gross: 4700, deductions: 920, net: 3780, approval: "pending" },
-];
-
 export default function PayslipsPage() {
   const [session, setSession] = useState<UserSession | null>(null);
-  const [payslips, setPayslips] = useState<Payslip[]>(initialPayslips);
+  const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [preview, setPreview] = useState<Payslip | null>(null);
   const [emailStatus, setEmailStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -48,6 +42,11 @@ export default function PayslipsPage() {
       return;
     }
     setSession(current);
+    api.getDemoData().then((data) => {
+      setPayslips(Array.isArray(data.payslips) ? (data.payslips as Payslip[]) : []);
+    }).catch(() => {
+      setPayslips([]);
+    });
   }, [router]);
 
   useEffect(() => {
@@ -97,6 +96,11 @@ export default function PayslipsPage() {
         link: "/pages/Payslips",
       });
     }
+  };
+
+  const removePayslip = (id: string) => {
+    setPayslips((prev) => prev.filter((item) => item.id !== id));
+    setSelectedIds((prev) => prev.filter((selected) => selected !== id));
   };
 
   const setStatus = (id: string, approval: Payslip["approval"]) => {
@@ -356,6 +360,9 @@ export default function PayslipsPage() {
                       </button>
                       <button className="danger" type="button" onClick={() => setStatus(item.id, "rejected")}>
                         Reject
+                      </button>
+                      <button className="danger" type="button" onClick={() => removePayslip(item.id)}>
+                        Delete
                       </button>
                     </div>
                   </td>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import { api } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 interface CalendarEvent {
@@ -44,82 +45,8 @@ export default function OrgCalendarPage() {
 
   const loadEvents = async () => {
     try {
-      // Mock data - replace with actual API call
-      const mockEvents: CalendarEvent[] = [
-        {
-          id: "evt_001",
-          title: "Monthly Payroll Processing",
-          description: "Process March 2026 payroll for all employees",
-          date: "2026-03-31",
-          time: "09:00 AM",
-          type: "payroll",
-          status: "upcoming"
-        },
-        {
-          id: "evt_002",
-          title: "Payroll Deadline",
-          description: "Final deadline for March payroll submissions",
-          date: "2026-03-25",
-          time: "05:00 PM",
-          type: "deadline",
-          status: "upcoming"
-        },
-        {
-          id: "evt_003",
-          title: "Team Meeting",
-          description: "Monthly team sync and performance review",
-          date: "2026-03-28",
-          time: "02:00 PM",
-          type: "meeting",
-          status: "upcoming"
-        },
-        {
-          id: "evt_004",
-          title: "Good Friday",
-          description: "Public holiday - Office closed",
-          date: "2026-04-18",
-          time: "All Day",
-          type: "holiday",
-          status: "upcoming"
-        },
-        {
-          id: "evt_005",
-          title: "Benefits Enrollment Reminder",
-          description: "Reminder for open enrollment period",
-          date: "2026-03-22",
-          time: "10:00 AM",
-          type: "reminder",
-          status: "upcoming"
-        },
-        {
-          id: "evt_006",
-          title: "Quarterly Reports Due",
-          description: "Q1 financial and HR reports submission",
-          date: "2026-04-05",
-          time: "04:00 PM",
-          type: "deadline",
-          status: "upcoming"
-        },
-        {
-          id: "evt_007",
-          title: "Employee Training Session",
-          description: "New software training for all staff",
-          date: "2026-03-30",
-          time: "11:00 AM",
-          type: "meeting",
-          status: "upcoming"
-        },
-        {
-          id: "evt_008",
-          title: "Payroll Tax Filing",
-          description: "Monthly payroll tax submission deadline",
-          date: "2026-04-15",
-          time: "11:59 PM",
-          type: "deadline",
-          status: "upcoming"
-        }
-      ];
-      setEvents(mockEvents);
+      const data = await api.getDemoData();
+      setEvents(Array.isArray(data.calendar) ? (data.calendar as CalendarEvent[]) : []);
     } catch (error) {
       console.error("Failed to load events:", error);
     } finally {

@@ -13,6 +13,8 @@ func (a *App) employeesHandler(w http.ResponseWriter, r *http.Request) {
 		a.listEmployees(w, r)
 	case http.MethodPost:
 		a.createEmployee(w, r)
+	case http.MethodDelete:
+		a.deleteEmployee(w, r)
 	default:
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
@@ -167,4 +169,46 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 	a.mu.Unlock()
 
 	writeJSON(w, http.StatusCreated, req)
+}
+
+func (a *App) deleteEmployee(w http.ResponseWriter, r *http.Request) {
+	orgID := strings.TrimSpace(r.URL.Query().Get("orgId"))
+	empID := strings.TrimSpace(r.URL.Query().Get("id"))
+	if orgID == "" || empID == "" {
+		writeError(w, http.StatusBadRequest, "orgId and id are required")
+		return
+	}
+
+	if a.db != nil {
+		res, err := a.db.Exec(`DELETE FROM employees WHERE id = $1 AND org_id = $2`, empID, orgID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "could not delete employee")
+			return
+		}
+		if rows, _ := res.RowsAffected(); rows == 0 {
+			writeError(w, http.StatusNotFound, "employee not found")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"deleted": true})
+		return
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	list := a.employees[orgID]
+	next := list[:0]
+	found := false
+	for _, emp := range list {
+		if emp.ID == empID {
+			found = true
+			continue
+		}
+		next = append(next, emp)
+	}
+	a.employees[orgID] = next
+	if !found {
+		writeError(w, http.StatusNotFound, "employee not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"deleted": true})
 }

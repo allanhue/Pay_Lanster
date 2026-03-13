@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { type UserSession } from "@/app/lib/session";
 
 type SidebarProps = {
@@ -95,6 +96,7 @@ const moduleIcons = {
 
 export default function Sidebar({ session }: SidebarProps) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
   const profileHref = session.role === "system_admin" ? "/system_admin/Configuration" : "/pages/Profile";
   const orgLabel = session.role === "system_admin" ? "Payroll Lanster" : session.orgName;
   const orgMeta = session.role === "system_admin" ? "System Admin" : session.name;
@@ -125,8 +127,25 @@ export default function Sidebar({ session }: SidebarProps) {
 
   const links = session.role === "system_admin" ? systemLinks : orgLinks;
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("sidebar_collapsed");
+    setCollapsed(stored === "true");
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("sidebar_collapsed", String(collapsed));
+    const root = document.documentElement;
+    if (collapsed) {
+      root.classList.add("sidebar-collapsed");
+    } else {
+      root.classList.remove("sidebar-collapsed");
+    }
+  }, [collapsed]);
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="brand">
         <Link className="brand-logo" href={session.role === "system_admin" ? "/system_admin/Dasboard" : "/pages/Dashboard"}>
           <span className="dot" />
@@ -137,6 +156,17 @@ export default function Sidebar({ session }: SidebarProps) {
           <small>{orgMeta}</small>
         </div>
       </div>
+      <button
+        type="button"
+        className="sidebar-toggle"
+        onClick={() => setCollapsed((prev) => !prev)}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={collapsed ? "Expand" : "Collapse"}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 7l-5 5 5 5M3 12h18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
       <div className="sidebar-scroll">
         <nav className="nav-links">
           {links.map((link) => {
