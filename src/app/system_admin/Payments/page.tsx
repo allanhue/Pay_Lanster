@@ -187,16 +187,22 @@ export default function PaymentsPage() {
     return matchesSearch && matchesStatus && matchesMethod && matchesOrg && matchesDateRange;
   });
 
-  const organizations = [...new Set(payments.map(p => ({ id: p.organizationId, name: p.organizationName })))];
+  const organizations = Array.from(new Map(payments.map((p) => [p.organizationId, p.organizationName])).entries()).map(([id, name]) => ({ id, name }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "status-completed";
-      case "processing": return "status-processing";
-      case "pending": return "status-draft";
-      case "failed": return "status-badge";
-      case "cancelled": return "status-badge";
-      default: return "";
+      case "completed":
+        return "status-completed";
+      case "processing":
+        return "status-processing";
+      case "pending":
+        return "status-pending";
+      case "failed":
+        return "status-failed";
+      case "cancelled":
+        return "status-cancelled";
+      default:
+        return "";
     }
   };
 
@@ -279,7 +285,7 @@ export default function PaymentsPage() {
   return (
     <main className="page-shell">
       <Navbar session={session} />
-      <section className="content">
+      <section className="content content-wide">
         <div className="page-header">
           <h1>Payments</h1>
           <p>Manage and track all payment transactions across organizations</p>
@@ -655,12 +661,12 @@ export default function PaymentsPage() {
                       </td>
                       <td>
                         <span className="date">
-                          {payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString() : '—'}
+                          {payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString() : '-'}
                         </span>
                       </td>
                       <td>
                         <span className="fee-amount">
-                          {payment.processingFee ? `$${payment.processingFee.toFixed(2)}` : '—'}
+                          {payment.processingFee ? `$${payment.processingFee.toFixed(2)}` : '-'}
                         </span>
                       </td>
                       <td>
@@ -826,3 +832,4 @@ export default function PaymentsPage() {
     </main>
   );
 }
+

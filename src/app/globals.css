@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 :root {
   --background: #f5f7fb;
@@ -274,6 +274,11 @@ button:hover {
   max-width: 1160px;
   margin: 0 auto 0 280px;
 }
+
+.content.content-wide {
+  max-width: 1280px;
+}
+
 
 .sidebar-title {
   margin: 0;
@@ -964,6 +969,31 @@ button:hover {
   margin: 0;
 }
 
+.page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-header-meta {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.stat-chip {
+  border-radius: 999px;
+  background: #eef5f7;
+  color: #264b5a;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  border: 1px solid #d6e6ea;
+}
+
+
 /* Tabs */
 .tabs {
   display: flex;
@@ -1116,6 +1146,289 @@ button:hover {
   right: 0.75rem;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+/* Payslip template + print */
+.payslip-employee {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.payslip-employee-name {
+  font-weight: 600;
+}
+
+.payslip-employee-email {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.payslip-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.payslip-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 24, 38, 0.42);
+  backdrop-filter: blur(4px);
+}
+
+.payslip-modal-card {
+  position: relative;
+  width: min(920px, 100%);
+  max-height: min(92vh, 940px);
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 24px 60px rgba(16, 46, 82, 0.25);
+  padding: 1rem;
+}
+
+.payslip-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.payslip-preview-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.payslip-preview-subtitle {
+  margin: 0.2rem 0 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.payslip-actions-right {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.payslip-sheet {
+  margin-top: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.payslip-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.1rem 1rem;
+  color: #fff;
+  background: linear-gradient(135deg, #007c91, #00af8a);
+}
+
+.payslip-brand {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.payslip-brand-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.payslip-org {
+  font-size: 0.85rem;
+  opacity: 0.92;
+}
+
+.payslip-title {
+  font-size: 1.35rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
+.payslip-meta {
+  display: grid;
+  gap: 0.35rem;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.payslip-meta span {
+  opacity: 0.8;
+  margin-right: 0.35rem;
+}
+
+.payslip-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  padding: 1rem 1.1rem;
+}
+
+.payslip-kv {
+  border: 1px solid #edf1f6;
+  border-radius: 12px;
+  padding: 0.85rem 0.9rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.payslip-kv-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.payslip-kv-value {
+  font-weight: 700;
+}
+
+.payslip-kv-sub {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.payslip-summary {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.payslip-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.payslip-net {
+  padding-top: 0.6rem;
+  border-top: 1px dashed #d9e0eb;
+  margin-top: 0.2rem;
+}
+
+.payslip-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  padding: 0 1.1rem 1rem;
+}
+
+.payslip-split-card {
+  border: 1px solid #edf1f6;
+  border-radius: 12px;
+  padding: 0.85rem 0.9rem;
+}
+
+.payslip-split-card h3 {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.95rem;
+}
+
+.payslip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.payslip-table th,
+.payslip-table td {
+  padding: 0.55rem 0.35rem;
+  border-bottom: 1px solid #f0f3f7;
+  text-align: left;
+}
+
+.payslip-table th {
+  color: var(--muted);
+  font-weight: 650;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.payslip-table .right {
+  text-align: right;
+}
+
+.payslip-footer-note {
+  border-top: 1px solid #edf1f6;
+  padding: 0.85rem 1.1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 720px) {
+  .payslip-sheet-grid,
+  .payslip-split {
+    grid-template-columns: 1fr;
+  }
+
+  .payslip-meta {
+    text-align: left;
+  }
+
+  .payslip-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .payslip-actions-right {
+    justify-content: flex-start;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .sidebar,
+  .navbar,
+  .content > :not(.payslip-modal),
+  .payslip-modal-backdrop,
+  .payslip-actions,
+  .alert {
+    display: none !important;
+  }
+
+  .payslip-modal {
+    position: static;
+    padding: 0;
+    display: block;
+  }
+
+  .payslip-modal-card {
+    max-height: none;
+    overflow: visible;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    background: transparent;
+  }
+
+  .payslip-sheet {
+    border: none;
+  }
 }
 
 .form-actions {
@@ -1300,6 +1613,12 @@ button:hover {
   font-size: 2rem;
 }
 
+.action-icon svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+
 .action-title {
   font-weight: 600;
   color: var(--text);
@@ -1366,7 +1685,25 @@ button:hover {
   color: #4338ca;
 }
 
-/* Deductions grid */
+.status-pending {
+  background: #fff6df;
+  color: #8f5a1c;
+}
+
+.status-failed {
+  background: #ffe7e8;
+  color: #a01c1c;
+}
+
+.status-cancelled {
+  background: #ecefef;
+  color: #2b3e52;
+}
+
+.status-rejected {
+  background: #ffe7e8;
+  color: #a01c1c;
+}/* Deductions grid */
 .deductions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -3543,6 +3880,11 @@ button:hover {
     margin-left: auto;
   }
 
+.content.content-wide {
+  max-width: 1280px;
+}
+
+
   .simple-list li {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3563,3 +3905,7 @@ button:hover {
     margin-top: 0;
   }
 }
+
+
+
+

@@ -1,21 +1,48 @@
-﻿const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
+const DEFAULT_BASE_URL = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080").replace(/\/+$/, "");
+let runtimeBaseUrl = DEFAULT_BASE_URL;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-    cache: "no-store",
-  });
+  const urlPath = path.startsWith("/") ? path : `/${path}`;
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(body || `Request failed with status ${response.status}`);
+  const attempt = async (baseUrl: string): Promise<T> => {
+    const response = await fetch(`${baseUrl}${urlPath}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const bodyText = await response.text();
+      try {
+        const parsed = JSON.parse(bodyText) as { error?: string; message?: string };
+        if (parsed?.error) {
+          throw new Error(parsed.error);
+        }
+        if (parsed?.message) {
+          throw new Error(parsed.message);
+        }
+      } catch {
+        // Ignore JSON parse errors and fall back to raw text.
+      }
+      throw new Error(bodyText || `Request failed with status ${response.status}`);
+    }
+
+    return (await response.json()) as T;
+  };
+
+  try {
+    return await attempt(runtimeBaseUrl);
+  } catch (err) {
+    const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
+    if (isLocalhost && runtimeBaseUrl !== "http://localhost:8080") {
+      runtimeBaseUrl = "http://localhost:8080";
+      return await attempt(runtimeBaseUrl);
+    }
+    throw err;
   }
-
-  return (await response.json()) as T;
 }
 
 export type PayrollEmployee = {
@@ -89,4 +116,7 @@ export const api = {
 
   sendSupport: (body: { name: string; email: string; subject: string; message: string }) =>
     request<{ sent: boolean; message: string }>("/api/support", { method: "POST", body: JSON.stringify(body) }),
+
+  sendMail: (body: { to: string[]; subject: string; html: string }) =>
+    request<{ sent: boolean; message: string }>("/api/mail/send", { method: "POST", body: JSON.stringify(body) }),
 };

@@ -15,8 +15,9 @@ import (
 )
 
 func main() {
-	// Load local development environment variables from Backpay/.env when present.
+	// Load local development environment variables from `.env` (current dir) and `Backpay/.env` (repo root runs).
 	_ = godotenv.Load()
+	_ = godotenv.Load("Backpay/.env")
 
 	initDBOnly := flag.Bool("init-db", false, "initialize database tables and exit")
 	seedDemo := flag.Bool("seed-demo", false, "seed demo data into database and exit")
