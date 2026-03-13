@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import { readSession, type UserSession } from "@/app/lib/session";
@@ -197,7 +197,7 @@ export default function OrgCalendarPage() {
     switch (status) {
       case "completed": return "status-completed";
       case "upcoming": return "status-processing";
-      case "cancelled": return "status-badge";
+      case "cancelled": return "status-cancelled";
       default: return "";
     }
   };
@@ -237,6 +237,14 @@ export default function OrgCalendarPage() {
     .slice(0, 5);
 
   const todayEvents = getEventsForDate(new Date());
+  const summary = useMemo(
+    () => ({
+      total: events.length,
+      payroll: events.filter((event) => event.type === "payroll").length,
+      deadlines: events.filter((event) => event.type === "deadline").length,
+    }),
+    [events]
+  );
 
   if (!session) {
     return <main className="centered">Loading...</main>;
@@ -245,10 +253,28 @@ export default function OrgCalendarPage() {
   return (
     <main className="page-shell">
       <Navbar session={session} />
-      <section className="content">
+      <section className="content content-wide">
         <div className="page-header">
           <h1>Calendar</h1>
           <p>Manage your organization's payroll schedule, holidays, and important dates</p>
+        </div>
+
+        <div className="cards-grid three-col">
+          <article className="card card-metric">
+            <span className="metric-label">Total Events</span>
+            <span className="metric-value">{summary.total}</span>
+            <span className="metric-sublabel">Scheduled items</span>
+          </article>
+          <article className="card card-metric">
+            <span className="metric-label">Payroll Items</span>
+            <span className="metric-value">{summary.payroll}</span>
+            <span className="metric-sublabel">Runs and cycles</span>
+          </article>
+          <article className="card card-metric">
+            <span className="metric-label">Deadlines</span>
+            <span className="metric-value">{summary.deadlines}</span>
+            <span className="metric-sublabel">Compliance dates</span>
+          </article>
         </div>
 
         {/* Calendar Controls */}
@@ -302,9 +328,8 @@ export default function OrgCalendarPage() {
           </div>
         </div>
 
-        <div className="cards-grid three-col">
-          {/* Calendar Grid */}
-          <div className="panel panel-elevated calendar-panel">
+        <div className="calendar-layout">
+          <div className="calendar-main panel panel-elevated calendar-panel">
             <div className="calendar-grid">
               <div className="calendar-weekdays">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
@@ -340,8 +365,9 @@ export default function OrgCalendarPage() {
             </div>
           </div>
 
-          {/* Today's Events */}
-          <div className="panel panel-elevated">
+          <div className="calendar-side">
+            {/* Today's Events */}
+            <div className="panel panel-elevated">
             <div className="panel-header">
               <h3>Today's Events</h3>
               <span className="event-count">{todayEvents.length}</span>
@@ -386,8 +412,8 @@ export default function OrgCalendarPage() {
             )}
           </div>
 
-          {/* Upcoming Events */}
-          <div className="panel panel-elevated">
+            {/* Upcoming Events */}
+            <div className="panel panel-elevated">
             <div className="panel-header">
               <h3>Upcoming Events</h3>
               <span className="event-count">{upcomingEvents.length}</span>
@@ -430,6 +456,7 @@ export default function OrgCalendarPage() {
                 ))}
               </div>
             )}
+          </div>
           </div>
         </div>
 

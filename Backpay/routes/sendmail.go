@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/smtp"
@@ -43,6 +44,7 @@ type mailConfig struct {
 	SupportTo      string
 	UseSSL         bool // SMTPS (implicit TLS), typically port 465
 	UseCredentials bool
+	UseBrevoAPI    bool
 }
 
 func envTrim(key string) string {
@@ -77,6 +79,7 @@ func getMailConfig() mailConfig {
 		SupportTo:      envTrim("SUPPORT_MAIL_TO"),
 		UseSSL:         parseEnvBool(envTrim("MAIL_SSL_TLS"), false),
 		UseCredentials: parseEnvBool(envTrim("USE_CREDENTIALS"), true),
+		UseBrevoAPI:    parseEnvBool(envTrim("BREVO_USE_API"), false),
 	}
 
 	if cfg.Host == "" {
@@ -194,6 +197,10 @@ func sendEmail(to []string, subject, bodyHTML string) error {
 		return fmt.Errorf("MAIL_FROM not configured")
 	}
 
+	if cfg.UseBrevoAPI {
+		return sendEmailViaBrevoAPI(cfg, to, subject, bodyHTML)
+	}
+
 	var auth smtp.Auth
 	if cfg.UseCredentials {
 		if cfg.Password == "" {
@@ -209,6 +216,73 @@ func sendEmail(to []string, subject, bodyHTML string) error {
 
 	addr := net.JoinHostPort(cfg.Host, cfg.Port)
 	return smtp.SendMail(addr, auth, cfg.From, to, msg)
+}
+
+type brevoEmailRequest struct {
+	Sender      brevoSender      `json:"sender"`
+	To          []brevoRecipient `json:"to"`
+	Subject     string           `json:"subject"`
+	HTMLContent string           `json:"htmlContent"`
+}
+
+type brevoSender struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type brevoRecipient struct {
+	Email string `json:"email"`
+}
+
+func sendEmailViaBrevoAPI(cfg mailConfig, to []string, subject, bodyHTML string) error {
+	apiKey := envTrim("BREVO_API_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("BREVO_API_KEY not configured")
+	}
+
+	recipients := make([]brevoRecipient, 0, len(to))
+	for _, addr := range to {
+		addr = strings.TrimSpace(addr)
+		if addr != "" {
+			recipients = append(recipients, brevoRecipient{Email: addr})
+		}
+	}
+	if len(recipients) == 0 {
+		return fmt.Errorf("missing recipients")
+	}
+
+	payload := brevoEmailRequest{
+		Sender:      brevoSender{Name: cfg.FromName, Email: cfg.From},
+		To:          recipients,
+		Subject:     subject,
+		HTMLContent: bodyHTML,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "https://api.brevo.com/v3/smtp/email", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api-key", apiKey)
+
+	client := &http.Client{Timeout: 12 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		raw, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("brevo api error: %s", strings.TrimSpace(string(raw)))
+	}
+
+	return nil
 }
 
 func (a *App) sendMail(w http.ResponseWriter, r *http.Request) {

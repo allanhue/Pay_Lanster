@@ -53,7 +53,7 @@ export default function SupportPage() {
   return (
     <main className="page-shell">
       <Navbar session={session} />
-      <section className="content">
+      <section className="content content-wide">
         <div className="page-header">
           <h1>Support Center</h1>
           <p>Need help with payroll? Contact our team and we'll get back to you within 24-48 hours.</p>
@@ -181,6 +181,16 @@ export default function SupportPage() {
                 <h3>Response Time</h3>
               </div>
               <p>We typically respond within <strong>24-48 hours</strong> during business days. For urgent payroll issues, please select "Payroll Issue" as the subject.</p>
+            </div>
+
+            <div className="panel panel-elevated">
+              <div className="panel-header">
+                <h3>Support Email</h3>
+              </div>
+              <div className="info-card">
+                <p>Reach us directly at <strong>support@payrolllanster.com</strong> for escalations.</p>
+                <p className="muted-text">This address can be updated in backend via `SUPPORT_MAIL_TO`.</p>
+              </div>
             </div>
 
             <div className="panel">

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import { api } from "@/app/lib/api";
+import { addNotification } from "@/app/lib/notifications";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 type Payslip = {
@@ -29,6 +30,11 @@ export default function PayslipsPage() {
   const [preview, setPreview] = useState<Payslip | null>(null);
   const [emailStatus, setEmailStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | Payslip["approval"]>("all");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<{ ok: boolean; message: string } | null>(null);
+  const [bulkSending, setBulkSending] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -52,8 +58,60 @@ export default function PayslipsPage() {
     return () => window.removeEventListener("afterprint", onAfterPrint);
   }, []);
 
+  const summary = useMemo(() => {
+    const pending = payslips.filter((slip) => slip.approval === "pending").length;
+    const approved = payslips.filter((slip) => slip.approval === "approved").length;
+    const rejected = payslips.filter((slip) => slip.approval === "rejected").length;
+    return { pending, approved, rejected };
+  }, [payslips]);
+
+  const filteredPayslips = useMemo(() => {
+    return payslips.filter((slip) => {
+      const matchesStatus = statusFilter === "all" || slip.approval === statusFilter;
+      const matchesSearch =
+        searchQuery === "" ||
+        slip.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        slip.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        slip.id.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesStatus && matchesSearch;
+    });
+  }, [payslips, searchQuery, statusFilter]);
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(filteredPayslips.map((item) => item.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const bulkApprove = () => {
+    setPayslips((prev) =>
+      prev.map((item) => (selectedIds.includes(item.id) ? { ...item, approval: "approved" } : item))
+    );
+    if (selectedIds.length > 0) {
+      addNotification({
+        title: "Payslips approved",
+        detail: `${selectedIds.length} payslips approved`,
+        tag: "payslip",
+        link: "/pages/Payslips",
+      });
+    }
+  };
+
   const setStatus = (id: string, approval: Payslip["approval"]) => {
-    setPayslips((prev) => prev.map((item) => (item.id === id ? { ...item, approval } : item)));
+    setPayslips((prev) => {
+      const target = prev.find((item) => item.id === id);
+      if (target) {
+        addNotification({
+          title: `Payslip ${approval}`,
+          detail: `${target.employee} • ${target.period} (${target.id})`,
+          tag: "payslip",
+          link: "/pages/Payslips",
+        });
+      }
+      return prev.map((item) => (item.id === id ? { ...item, approval } : item));
+    });
   };
 
   const money = (value: number) =>
@@ -62,7 +120,6 @@ export default function PayslipsPage() {
   const payslipBreakdown = useMemo(() => {
     if (!preview) return null;
 
-    // Simple split for templating; replace with real payroll line-items when backend exists.
     const paye = Math.round(preview.deductions * 0.7 * 100) / 100;
     const nssf = Math.round(preview.deductions * 0.2 * 100) / 100;
     const nhif = Math.max(0, Math.round((preview.deductions - paye - nssf) * 100) / 100);
@@ -126,10 +183,47 @@ export default function PayslipsPage() {
         html: buildPayslipEmailHTML(preview),
       });
       setEmailStatus({ ok: true, message: res.message || "Email sent" });
+      addNotification({
+        title: "Payslip emailed",
+        detail: `Sent to ${preview.email} • ${preview.period}`,
+        tag: "payslip",
+        link: "/pages/Payslips",
+      });
     } catch (err) {
       setEmailStatus({ ok: false, message: err instanceof Error ? err.message : "Failed to send email" });
     } finally {
       setSendingEmail(false);
+    }
+  };
+
+  const onBulkEmail = async () => {
+    const recipients = payslips.filter((item) => selectedIds.includes(item.id) && item.approval === "approved");
+    if (recipients.length === 0) {
+      setBulkStatus({ ok: false, message: "Select approved payslips to email." });
+      return;
+    }
+
+    setBulkStatus(null);
+    setBulkSending(true);
+    try {
+      for (const slip of recipients) {
+        await api.sendMail({
+          to: [slip.email],
+          subject: `Payslip (${slip.period}) - ${slip.employee}`,
+          html: buildPayslipEmailHTML(slip),
+        });
+      }
+      setBulkStatus({ ok: true, message: `Sent ${recipients.length} payslips.` });
+      addNotification({
+        title: "Payslips emailed",
+        detail: `Sent ${recipients.length} approved payslips`,
+        tag: "payslip",
+        link: "/pages/Payslips",
+      });
+    } catch (err) {
+      setBulkStatus({ ok: false, message: err instanceof Error ? err.message : "Failed to send emails" });
+    } finally {
+      setBulkSending(false);
     }
   };
 
@@ -138,15 +232,80 @@ export default function PayslipsPage() {
   return (
     <main className="page-shell">
       <Navbar session={session} />
-      <section className="content">
+      <section className="content content-wide">
         <div className="page-header">
           <h1>Payslips</h1>
           <p>Review, approve, print (PDF), and email payslips.</p>
         </div>
-        <article className="panel">
+
+        <div className="cards-grid three-col">
+          <article className="card card-metric">
+            <span className="metric-label">Pending</span>
+            <span className="metric-value">{summary.pending}</span>
+            <span className="metric-sublabel">Awaiting review</span>
+          </article>
+          <article className="card card-metric">
+            <span className="metric-label">Approved</span>
+            <span className="metric-value">{summary.approved}</span>
+            <span className="metric-sublabel">Ready to send</span>
+          </article>
+          <article className="card card-metric">
+            <span className="metric-label">Rejected</span>
+            <span className="metric-value">{summary.rejected}</span>
+            <span className="metric-sublabel">Needs updates</span>
+          </article>
+        </div>
+
+        <article className="panel panel-elevated">
+          <div className="panel-header">
+            <div>
+              <h2>Payroll Payslips</h2>
+              <p>Filter, approve, and email payslips in bulk.</p>
+            </div>
+            <div className="panel-meta">
+              <button className="btn btn-secondary btn-sm" type="button" onClick={bulkApprove} disabled={selectedIds.length === 0}>
+                Approve selected
+              </button>
+              <button className="btn btn-primary btn-sm" type="button" onClick={onBulkEmail} disabled={bulkSending || selectedIds.length === 0}>
+                {bulkSending ? "Sending..." : "Email selected"}
+              </button>
+            </div>
+          </div>
+          <div className="filter-row">
+            <div className="form-group">
+              <label htmlFor="payslipSearch">Search</label>
+              <input
+                id="payslipSearch"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by employee, email, or slip ID"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="payslipStatus">Status</label>
+              <select id="payslipStatus" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}>
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            {bulkStatus && (
+              <div className={`status-pill ${bulkStatus.ok ? "status-pill-success" : "status-pill-error"}`}>
+                {bulkStatus.message}
+              </div>
+            )}
+          </div>
           <table className="data-table">
             <thead>
               <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length > 0 && selectedIds.length === filteredPayslips.length}
+                    onChange={(event) => toggleSelectAll(event.target.checked)}
+                  />
+                </th>
                 <th>Slip ID</th>
                 <th>Employee</th>
                 <th>Period</th>
@@ -158,8 +317,21 @@ export default function PayslipsPage() {
               </tr>
             </thead>
             <tbody>
-              {payslips.map((item) => (
+              {filteredPayslips.map((item) => (
                 <tr key={item.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(item.id)}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          setSelectedIds((prev) => [...prev, item.id]);
+                        } else {
+                          setSelectedIds((prev) => prev.filter((id) => id !== item.id));
+                        }
+                      }}
+                    />
+                  </td>
                   <td><strong>{item.id}</strong></td>
                   <td>
                     <div className="payslip-employee">
@@ -179,7 +351,7 @@ export default function PayslipsPage() {
                       <button className="secondary" type="button" onClick={() => { setPreview(item); setEmailStatus(null); }}>
                         View / Print
                       </button>
-                      <button className="secondary" type="button" onClick={() => setStatus(item.id, "approved")}>
+                      <button className="secondary" type="button" onClick={() => setStatus(item.id, "approved")}> 
                         Approve
                       </button>
                       <button className="danger" type="button" onClick={() => setStatus(item.id, "rejected")}>
@@ -200,7 +372,7 @@ export default function PayslipsPage() {
               <div className="payslip-actions">
                 <div className="payslip-actions-left">
                   <h2 className="payslip-preview-title">Payslip Preview</h2>
-                  <p className="payslip-preview-subtitle">{preview.employee} • {preview.period} • {preview.id}</p>
+                  <p className="payslip-preview-subtitle">{preview.employee} | {preview.period} | {preview.id}</p>
                 </div>
                 <div className="payslip-actions-right">
                   <button type="button" className="secondary" onClick={onPrint}>

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import { api } from "@/app/lib/api";
+import { addNotification } from "@/app/lib/notifications";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 type PayrunRow = {
@@ -155,6 +156,12 @@ export default function PayrunPage() {
       };
 
       setPayruns([newPayrun, ...payruns]);
+      addNotification({
+        title: "Payrun created",
+        detail: `${newPayrun.id} • ${newPayrun.period} • ${selectedEmpls.length} employees`,
+        tag: "payrun",
+        link: "/pages/Payrun",
+      });
       setMessage(`Payroll created for ${period} with ${selectedEmpls.length} employees`);
       setIsProcessing(false);
       setActiveTab("overview");

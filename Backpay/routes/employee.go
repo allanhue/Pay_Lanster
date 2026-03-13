@@ -27,7 +27,23 @@ func (a *App) listEmployees(w http.ResponseWriter, r *http.Request) {
 
 	if a.db != nil {
 		rows, err := a.db.Query(
-			`SELECT id, org_id, full_name, email, department, salary, pay_cycle, status
+			`SELECT id,
+         org_id,
+         full_name,
+         COALESCE(email, ''),
+         COALESCE(department, ''),
+         salary,
+         COALESCE(pay_cycle, ''),
+         COALESCE(status, 'active'),
+         COALESCE(tax_id, ''),
+         COALESCE(nssf, ''),
+         COALESCE(nhif, ''),
+         COALESCE(paye, ''),
+         COALESCE(bank_name, ''),
+         COALESCE(bank_account, ''),
+         COALESCE(contract_type, ''),
+         COALESCE(location, ''),
+         COALESCE(TO_CHAR(hire_date, 'YYYY-MM-DD'), '')
        FROM employees
        WHERE org_id = $1
        ORDER BY created_at DESC, id DESC`,
@@ -42,7 +58,25 @@ func (a *App) listEmployees(w http.ResponseWriter, r *http.Request) {
 		employees := []Employee{}
 		for rows.Next() {
 			var employee Employee
-			if err := rows.Scan(&employee.ID, &employee.OrgID, &employee.FullName, &employee.Email, &employee.Department, &employee.Salary, &employee.PayCycle, &employee.Status); err != nil {
+			if err := rows.Scan(
+				&employee.ID,
+				&employee.OrgID,
+				&employee.FullName,
+				&employee.Email,
+				&employee.Department,
+				&employee.Salary,
+				&employee.PayCycle,
+				&employee.Status,
+				&employee.TaxID,
+				&employee.NSSF,
+				&employee.NHIF,
+				&employee.PAYE,
+				&employee.BankName,
+				&employee.BankAccount,
+				&employee.ContractType,
+				&employee.Location,
+				&employee.HireDate,
+			); err != nil {
 				writeError(w, http.StatusInternalServerError, "could not load employees")
 				return
 			}
@@ -79,14 +113,41 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 	if req.PayCycle == "" {
 		req.PayCycle = "monthly"
 	}
+	if req.Status == "" {
+		req.Status = "active"
+	}
+	if req.ContractType == "" {
+		req.ContractType = "full_time"
+	}
 
 	if a.db != nil {
 		req.ID = a.nextID("emp")
-		req.Status = "active"
 		if _, err := a.db.Exec(
-			`INSERT INTO employees (id, org_id, full_name, email, department, salary, pay_cycle, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-			req.ID, req.OrgID, req.FullName, req.Email, req.Department, req.Salary, req.PayCycle, req.Status,
+			`INSERT INTO employees (
+         id, org_id, full_name, email, department, salary, pay_cycle, status,
+         tax_id, nssf, nhif, paye, bank_name, bank_account, contract_type, location, hire_date
+       )
+       VALUES (
+         $1, $2, $3, $4, $5, $6, $7, $8,
+         $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, '')
+       )`,
+			req.ID,
+			req.OrgID,
+			req.FullName,
+			req.Email,
+			req.Department,
+			req.Salary,
+			req.PayCycle,
+			req.Status,
+			req.TaxID,
+			req.NSSF,
+			req.NHIF,
+			req.PAYE,
+			req.BankName,
+			req.BankAccount,
+			req.ContractType,
+			req.Location,
+			req.HireDate,
 		); err != nil {
 			if err == sql.ErrNoRows {
 				writeError(w, http.StatusBadRequest, "organization not found")
@@ -102,7 +163,6 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 
 	a.mu.Lock()
 	req.ID = a.nextID("emp")
-	req.Status = "active"
 	a.employees[req.OrgID] = append(a.employees[req.OrgID], req)
 	a.mu.Unlock()
 

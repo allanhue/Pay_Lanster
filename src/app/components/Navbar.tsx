@@ -1,32 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearSession, type UserSession } from "@/app/lib/session";
+import {
+  clearNotifications,
+  getNotifications,
+  removeNotification,
+  subscribeNotifications,
+  type AppNotification,
+  type NotificationTag,
+} from "@/app/lib/notifications";
 import Sidebar from "@/app/components/Sidebar";
 
 type NavbarProps = {
   session: UserSession;
 };
 
-type NotificationItem = {
-  id: string;
-  title: string;
-  detail: string;
-  tag: "payrun" | "payslip" | "approval" | "system";
-};
-
-const defaultNotifications: NotificationItem[] = [
-  { id: "ntf-1", title: "Payrun pending approval", detail: "April payrun PR-0426 is awaiting approval.", tag: "payrun" },
-  { id: "ntf-2", title: "Payslip batch ready", detail: "12 payslips were generated for review.", tag: "payslip" },
-  { id: "ntf-3", title: "Approval reminder", detail: "2 items in approval queue are older than 24h.", tag: "approval" },
-];
-
 export default function Navbar({ session }: NavbarProps) {
   const router = useRouter();
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(defaultNotifications);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notifFilter, setNotifFilter] = useState<"all" | NotificationTag>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -34,8 +30,25 @@ export default function Navbar({ session }: NavbarProps) {
   const searchHref = session.role === "system_admin" ? "/system_admin/Analytics" : "/pages/Reports";
   const settingsHref = session.role === "system_admin" ? "/system_admin/Configuration" : "/pages/Settings";
 
-  const removeNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((item) => item.id !== id));
+  useEffect(() => {
+    setNotifications(getNotifications());
+    return subscribeNotifications(() => setNotifications(getNotifications()));
+  }, []);
+
+  const filteredNotifications =
+    notifFilter === "all" ? notifications : notifications.filter((item) => item.tag === notifFilter);
+
+  const openNotification = (item: AppNotification) => {
+    const target =
+      item.tag === "payrun"
+        ? "/pages/Payrun"
+        : item.tag === "payslip"
+          ? "/pages/Payslips"
+          : item.tag === "approval"
+            ? "/pages/Approvals"
+            : "/pages/Dashboard";
+    router.push(item.link || target);
+    removeNotification(item.id);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -180,6 +193,14 @@ export default function Navbar({ session }: NavbarProps) {
             )}
           </div>
 
+          <Link aria-label="Help & Support" className="top-icon-link" href="/pages/Support">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M9.5 9.5a2.5 2.5 0 015 0c0 1.7-2.5 2-2.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              <circle cx="12" cy="17" r="1" fill="currentColor" />
+            </svg>
+          </Link>
+
           <Link aria-label="Settings" className="top-icon-link" href={settingsHref}>
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M12 8.8A3.2 3.2 0 1112 15.2 3.2 3.2 0 0112 8.8z" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -226,9 +247,9 @@ export default function Navbar({ session }: NavbarProps) {
             <span className="notif-count">{notifications.length}</span>
           </div>
           <div className="notif-header-actions">
-            <button 
-              className="clear-all-btn" 
-              onClick={() => setNotifications([])} 
+            <button
+              className="clear-all-btn"
+              onClick={clearNotifications}
               type="button"
               title="Clear all notifications"
             >
@@ -240,6 +261,18 @@ export default function Navbar({ session }: NavbarProps) {
               </svg>
             </button>
           </div>
+        </div>
+        <div className="notif-filters">
+          {["all", "payrun", "payslip", "approval"].map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              className={`notif-filter ${notifFilter === tag ? "active" : ""}`}
+              onClick={() => setNotifFilter(tag as typeof notifFilter)}
+            >
+              {tag === "all" ? "All" : tag}
+            </button>
+          ))}
         </div>
         {notifications.length === 0 ? (
           <div className="notif-empty">
@@ -254,7 +287,7 @@ export default function Navbar({ session }: NavbarProps) {
           </div>
         ) : (
           <ul className="notif-list">
-            {notifications.map((item) => (
+            {filteredNotifications.map((item) => (
               <li className={`notif-item notif-${item.tag}`} key={item.id}>
                 <div className="notif-content">
                   <div className="notif-header-item">
@@ -285,7 +318,15 @@ export default function Navbar({ session }: NavbarProps) {
                   </div>
                   <div className="notif-meta">
                     <span className={`notif-tag tag-${item.tag}`}>{item.tag}</span>
-                    <span className="notif-time">Just now</span>
+                    <span className="notif-time">{item.time}</span>
+                    <button 
+                      className="notif-open"
+                      onClick={() => openNotification(item)}
+                      type="button"
+                      title="Open"
+                    >
+                      View
+                    </button>
                     <button 
                       className="notif-remove" 
                       onClick={() => removeNotification(item.id)} 

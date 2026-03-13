@@ -86,6 +86,11 @@ const moduleIcons = {
       <rect x="16" y="14" width="2" height="2" fill="currentColor" />
     </svg>
   ),
+  advanced: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2l2.4 4.8 5.3.8-3.8 3.7.9 5.3-4.8-2.5-4.8 2.5.9-5.3L4.3 7.6l5.3-.8z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 export default function Sidebar({ session }: SidebarProps) {
@@ -104,8 +109,10 @@ export default function Sidebar({ session }: SidebarProps) {
     { href: "/pages/Payslips", label: "Payslips", icon: moduleIcons.payslips },
     { href: "/pages/Reports", label: "Reports", icon: moduleIcons.reports },
     { href: "/pages/Integrations", label: "Integrations", icon: moduleIcons.support },
+    { href: "/pages/Support", label: "Support", icon: moduleIcons.support },
     { href: "/pages/Calendar", label: "Calendar", icon: moduleIcons.calendar },
     { href: "/pages/Settings", label: "Payroll Setup", icon: moduleIcons.settings },
+    { href: "/pages/Advanced_Settings", label: "Advanced Settings", icon: moduleIcons.advanced },
   ];
 
   const systemLinks = [

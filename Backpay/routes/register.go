@@ -14,4 +14,7 @@ func (a *App) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/api/mail/send", a.sendMail)
 	mux.HandleFunc("/api/mail/test", a.sendMailTest)
 	mux.HandleFunc("/api/support", a.supportForm)
+	mux.HandleFunc("/api/approvals", a.approvalsHandler)
+	mux.HandleFunc("/api/integrations/project", a.projectIntegrationStatus)
+	mux.HandleFunc("/api/integrations/project/report", a.projectIntegrationReport)
 }
