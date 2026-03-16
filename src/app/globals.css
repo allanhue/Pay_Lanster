@@ -1611,7 +1611,94 @@ button:hover {
   font-size: 0.9rem;
 }
 
-/* Payslip template + print */
+.payslip-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.payslip-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.payslip-side-panel {
+  width: 400px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+}
+
+.employee-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.employee-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.employee-side-panel {
+  width: 400px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+}
+
+.relative {
+  position: relative;
+}
+
+.three-dot-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  color: var(--muted);
+}
+
+.three-dot-btn:hover {
+  background: var(--line);
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  min-width: 120px;
+}
+
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dropdown-menu button:hover {
+  background: var(--background);
+}
 .payslip-employee {
   display: grid;
   gap: 0.2rem;
@@ -2961,6 +3048,58 @@ button:hover {
   background: #ffe7e3;
 }
 
+.action-cell {
+  position: relative;
+}
+
+.action-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  padding: 0.5rem;
+  z-index: 50;
+}
+
+.action-popover-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0.55rem 0.6rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.action-popover-item:hover {
+  background: #f4f8fb;
+}
+
+.action-popover-item.danger {
+  color: #a01818;
+}
+
+.action-popover-item.danger:hover {
+  background: #ffe7e3;
+}
+
+.popover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 40;
+  border: none;
+  padding: 0;
+}
+
 /* Enhanced Empty State */
 .empty-state {
   text-align: center;
@@ -3072,6 +3211,17 @@ button:hover {
 .calendar-side {
   display: grid;
   gap: 1rem;
+}
+
+.calendar-side-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .calendar-side-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .calendar-nav {
@@ -3468,10 +3618,11 @@ button:hover {
 .detail-drawer {
   position: fixed;
   top: 0;
-  right: 0;
-  width: min(420px, 100%);
+  right: 32px;
+  width: min(520px, 92vw);
   height: 100vh;
   background: #fff;
+  border-radius: 16px;
   z-index: 95;
   box-shadow: -12px 0 32px rgba(16, 46, 82, 0.18);
   display: flex;
@@ -3570,6 +3721,8 @@ button:hover {
 @media (max-width: 720px) {
   .detail-drawer {
     width: 100%;
+    right: 0;
+    border-radius: 0;
   }
 }
 

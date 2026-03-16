@@ -48,6 +48,12 @@ export default function PayrunPage() {
   const [payDate, setPayDate] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [openEmployeeMenu, setOpenEmployeeMenu] = useState<string | null>(null);
+  const [openEmployeeBulkMenu, setOpenEmployeeBulkMenu] = useState(false);
+  const [openPayrunMenu, setOpenPayrunMenu] = useState<string | null>(null);
+  const [showStatutoryModal, setShowStatutoryModal] = useState(false);
+  const [statutoryNote, setStatutoryNote] = useState("");
+  const [statutoryStatus, setStatutoryStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const current = readSession();
@@ -171,6 +177,24 @@ export default function PayrunPage() {
     setDeductions(prev => prev.map((d, i) => 
       i === index ? { ...d, amount } : d
     ));
+  };
+
+  const submitStatutoryRequest = async () => {
+    if (!session) return;
+    setStatutoryStatus(null);
+    try {
+      await api.sendSupport({
+        name: session.name,
+        email: session.email,
+        subject: "Custom statutory deduction request",
+        message: `Organization: ${session.orgName || "Org Admin"}\n\nRequest:\n${statutoryNote || "Please enable custom statutory deductions."}`,
+      });
+      setStatutoryStatus("Request sent. A system admin must approve this change.");
+      setShowStatutoryModal(false);
+      setStatutoryNote("");
+    } catch (err) {
+      setStatutoryStatus(err instanceof Error ? err.message : "Failed to send request");
+    }
   };
 
   if (!session) {
@@ -330,6 +354,47 @@ export default function PayrunPage() {
               <div className="panel-header">
                 <h2>Employees</h2>
                 <p>Select employees to include in this payrun</p>
+                <div className="panel-meta">
+                  <button
+                    className="action-menu-btn"
+                    type="button"
+                    onClick={() => setOpenEmployeeBulkMenu((prev) => !prev)}
+                    aria-label="Employee selection actions"
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+                      <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                    </svg>
+                  </button>
+                  {openEmployeeBulkMenu && (
+                    <>
+                      <button className="popover-backdrop" type="button" onClick={() => setOpenEmployeeBulkMenu(false)} />
+                      <div className="action-popover">
+                        <button
+                          className="action-popover-item"
+                          type="button"
+                          onClick={() => {
+                            setSelectedEmployees(employees.map((e) => e.id));
+                            setOpenEmployeeBulkMenu(false);
+                          }}
+                        >
+                          Include all employees
+                        </button>
+                        <button
+                          className="action-popover-item"
+                          type="button"
+                          onClick={() => {
+                            setSelectedEmployees([]);
+                            setOpenEmployeeBulkMenu(false);
+                          }}
+                        >
+                          Clear selection
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
               {employees.length === 0 ? (
                 <div className="empty-state">
@@ -346,23 +411,11 @@ export default function PayrunPage() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>
-                        <input
-                          type="checkbox"
-                          checked={selectedEmployees.length === employees.length}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedEmployees(employees.map(e => e.id));
-                            } else {
-                              setSelectedEmployees([]);
-                            }
-                          }}
-                        />
-                      </th>
                       <th>Employee</th>
                       <th>Department</th>
                       <th>Monthly Gross</th>
                       <th>Est. Net Pay</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -370,23 +423,54 @@ export default function PayrunPage() {
                       const { net } = calculateNetPay(emp.grossSalary, deductions);
                       return (
                         <tr key={emp.id}>
-                          <td>
-                            <input
-                              type="checkbox"
-                              checked={selectedEmployees.includes(emp.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedEmployees([...selectedEmployees, emp.id]);
-                                } else {
-                                  setSelectedEmployees(selectedEmployees.filter(id => id !== emp.id));
-                                }
-                              }}
-                            />
-                          </td>
                           <td>{emp.name}</td>
                           <td>{emp.department}</td>
                           <td>${emp.grossSalary.toLocaleString()}</td>
                           <td>${net.toLocaleString()}</td>
+                          <td className="action-cell">
+                            <button
+                              className="action-menu-btn"
+                              type="button"
+                              onClick={() => setOpenEmployeeMenu((prev) => (prev === emp.id ? null : emp.id))}
+                              aria-label="Employee selection"
+                            >
+                              <svg viewBox="0 0 24 24">
+                                <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                                <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+                                <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                              </svg>
+                            </button>
+                            {openEmployeeMenu === emp.id && (
+                              <>
+                                <button className="popover-backdrop" type="button" onClick={() => setOpenEmployeeMenu(null)} />
+                                <div className="action-popover">
+                                  {selectedEmployees.includes(emp.id) ? (
+                                    <button
+                                      className="action-popover-item"
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedEmployees(selectedEmployees.filter((id) => id !== emp.id));
+                                        setOpenEmployeeMenu(null);
+                                      }}
+                                    >
+                                      Exclude from payrun
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="action-popover-item"
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedEmployees([...selectedEmployees, emp.id]);
+                                        setOpenEmployeeMenu(null);
+                                      }}
+                                    >
+                                      Include in payrun
+                                    </button>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -399,6 +483,11 @@ export default function PayrunPage() {
               <div className="panel-header">
                 <h2>Deductions & Statutories</h2>
                 <p>Configure applicable deductions for this payrun</p>
+                <div className="panel-meta">
+                  <button className="btn btn-secondary btn-sm" type="button" onClick={() => setShowStatutoryModal(true)}>
+                    Add Custom Statutory
+                  </button>
+                </div>
               </div>
               <div className="deductions-grid">
                 {deductions.map((deduction, index) => (
@@ -490,12 +579,74 @@ export default function PayrunPage() {
                       </span>
                     </td>
                     <td>
-                      <button className="btn btn-sm btn-secondary">View</button>
+                      <div className="action-cell">
+                        <button
+                          className="action-menu-btn"
+                          type="button"
+                          onClick={() => setOpenPayrunMenu((prev) => (prev === row.id ? null : row.id))}
+                          aria-label="Payrun actions"
+                        >
+                          <svg viewBox="0 0 24 24">
+                            <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                            <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+                            <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                          </svg>
+                        </button>
+                        {openPayrunMenu === row.id && (
+                          <>
+                            <button className="popover-backdrop" type="button" onClick={() => setOpenPayrunMenu(null)} />
+                            <div className="action-popover">
+                              <button className="action-popover-item" type="button">
+                                View details
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {showStatutoryModal && (
+          <div className="modal-backdrop" onClick={() => setShowStatutoryModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Request Custom Statutory</h3>
+                <button className="modal-close" onClick={() => setShowStatutoryModal(false)} type="button">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body">
+                <p className="muted-text">
+                  Send a request to the system admin to enable custom statutory deductions for your organization.
+                </p>
+                <div className="form-group">
+                  <label htmlFor="statutoryNote">Request Details</label>
+                  <textarea
+                    id="statutoryNote"
+                    rows={5}
+                    value={statutoryNote}
+                    onChange={(e) => setStatutoryNote(e.target.value)}
+                    placeholder="Describe the statutory item and the business reason..."
+                  />
+                </div>
+                {statutoryStatus && <div className="status-pill status-pill-success">{statutoryStatus}</div>}
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => setShowStatutoryModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" type="button" onClick={submitStatutoryRequest}>
+                  Send Request
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </section>

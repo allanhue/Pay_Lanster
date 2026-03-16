@@ -17,8 +17,14 @@ const moduleIcons = {
   ),
   payrun: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 2l-2 4h4zM5 8h14v9.5a2.5 2.5 0 01-2.5 2.5H7.5A2.5 2.5 0 015 17.5z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M7 12h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <rect x="4" y="2" width="16" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <line x1="8" y1="6" x2="16" y2="6" stroke="currentColor" strokeWidth="1.6" />
+      <line x1="8" y1="10" x2="16" y2="10" stroke="currentColor" strokeWidth="1.6" />
+      <line x1="8" y1="14" x2="12" y2="14" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="15" cy="16" r="1" fill="currentColor" />
+      <circle cx="19" cy="16" r="1" fill="currentColor" />
+      <circle cx="15" cy="19" r="1" fill="currentColor" />
+      <circle cx="19" cy="19" r="1" fill="currentColor" />
     </svg>
   ),
   employees: (
@@ -29,8 +35,7 @@ const moduleIcons = {
   ),
   loans: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M17 5H7a2 2 0 00-2 2v10h14V7a2 2 0 00-2-2z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M7 12h10M7 15h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   benefits: (
@@ -53,8 +58,9 @@ const moduleIcons = {
   ),
   payslips: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7 3h10l2 2v16H5V5z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M9 10h6M9 14h6M9 18h4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
+      <path d="M4 7l16 0M4 11l16 0M4 15l10 0M4 19l6 0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M20 7v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 3v4M8 3v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ),
   settings: (
@@ -63,10 +69,11 @@ const moduleIcons = {
       <path d="M4 12l2-2 1.6 1.6M20 12l-2 2-1.6-1.6M12 4l2 2-1.6 1.6M12 20l-2-2 1.6-1.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ),
-  support: (
+  integrations: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 8c0-2.2 2.3-4 4-4h8c1.7 0 4 1.7 4 4v6a2 2 0 01-2 2h-1a3 3 0 01-6 0H6a2 2 0 01-2-2z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9.5 16h5M11 18v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M8 12h8M12 8v8M4 4h16v16H4z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="9" cy="9" r="1" fill="currentColor" />
+      <circle cx="15" cy="15" r="1" fill="currentColor" />
     </svg>
   ),
   payments: (
@@ -89,7 +96,7 @@ const moduleIcons = {
   ),
   advanced: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 2l2.4 4.8 5.3.8-3.8 3.7.9 5.3-4.8-2.5-4.8 2.5.9-5.3L4.3 7.6l5.3-.8z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M12 2v6m0 0l-4 4m4-4l4 4m-4 4v6m0 0l-4-4m4 4l4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
 };
@@ -110,7 +117,7 @@ export default function Sidebar({ session }: SidebarProps) {
     { href: "/pages/Approvals", label: "Approvals", icon: moduleIcons.approvals },
     { href: "/pages/Payslips", label: "Payslips", icon: moduleIcons.payslips },
     { href: "/pages/Reports", label: "Reports", icon: moduleIcons.reports },
-    { href: "/pages/Integrations", label: "Integrations", icon: moduleIcons.support },
+    { href: "/pages/Integrations", label: "Integrations", icon: moduleIcons.integrations },
     { href: "/pages/Support", label: "Support", icon: moduleIcons.support },
     { href: "/pages/Calendar", label: "Calendar", icon: moduleIcons.calendar },
     { href: "/pages/Settings", label: "Payroll Setup", icon: moduleIcons.settings },

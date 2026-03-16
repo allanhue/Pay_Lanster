@@ -16,6 +16,7 @@ export default function BenefitsAndAllowancesPage() {
   const [status, setStatus] = useState<Benefit["status"]>("active");
   const [effectiveDate, setEffectiveDate] = useState("");
   const [adding, setAdding] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const router = useRouter();
 
   const summary = useMemo(() => ({
@@ -220,10 +221,33 @@ export default function BenefitsAndAllowancesPage() {
                       <span className={`status-badge status-${benefit.status}`}>{benefit.status}</span>
                     </td>
                     <td>{benefit.effectiveDate || "-"}</td>
-                    <td>
-                      <button className="danger" type="button" onClick={() => removeBenefit(benefit.id)}>
-                        Delete
+                    <td className="action-cell">
+                      <button
+                        className="action-menu-btn"
+                        type="button"
+                        onClick={() => setActiveMenu(activeMenu === benefit.id ? null : benefit.id)}
+                        aria-label="Benefit actions"
+                      >
+                        <svg viewBox="0 0 24 24">
+                          <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                        </svg>
                       </button>
+                      {activeMenu === benefit.id && (
+                        <>
+                          <button className="popover-backdrop" type="button" onClick={() => setActiveMenu(null)} />
+                          <div className="action-popover">
+                            <button
+                              className="action-popover-item danger"
+                              type="button"
+                              onClick={() => { removeBenefit(benefit.id); setActiveMenu(null); }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

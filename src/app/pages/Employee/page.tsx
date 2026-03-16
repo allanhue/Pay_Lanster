@@ -1046,10 +1046,3 @@ export default function EmployeePage() {
     </main>
   );
 }
-
-
-
-
-
-
-

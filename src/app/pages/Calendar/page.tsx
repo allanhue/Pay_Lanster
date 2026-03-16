@@ -27,6 +27,14 @@ export default function OrgCalendarPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventTime, setEventTime] = useState("");
+  const [eventType, setEventType] = useState<CalendarEvent["type"]>("payroll");
+  const [eventStatus, setEventStatus] = useState<CalendarEvent["status"]>("upcoming");
   const router = useRouter();
 
   useEffect(() => {
@@ -158,6 +166,67 @@ export default function OrgCalendarPage() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
   };
 
+  const resetEventForm = () => {
+    setEventTitle("");
+    setEventDescription("");
+    setEventDate("");
+    setEventTime("");
+    setEventType("payroll");
+    setEventStatus("upcoming");
+  };
+
+  const openAddEvent = () => {
+    setEditingEvent(null);
+    resetEventForm();
+    setShowEventForm(true);
+  };
+
+  const openEditEvent = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    setEventTitle(event.title);
+    setEventDescription(event.description);
+    setEventDate(event.date);
+    setEventTime(event.time);
+    setEventType(event.type);
+    setEventStatus(event.status);
+    setShowEventForm(true);
+  };
+
+  const saveEvent = () => {
+    if (!eventTitle || !eventDate) return;
+    if (editingEvent) {
+      setEvents((prev) => prev.map((item) => (
+        item.id === editingEvent.id
+          ? {
+              ...item,
+              title: eventTitle,
+              description: eventDescription,
+              date: eventDate,
+              time: eventTime,
+              type: eventType,
+              status: eventStatus,
+            }
+          : item
+      )));
+    } else {
+      setEvents((prev) => [
+        {
+          id: `evt_${Date.now().toString().slice(-5)}`,
+          title: eventTitle,
+          description: eventDescription,
+          date: eventDate,
+          time: eventTime || "09:00 AM",
+          type: eventType,
+          status: eventStatus,
+        },
+        ...prev,
+      ]);
+    }
+    setShowEventForm(false);
+    setEditingEvent(null);
+    resetEventForm();
+  };
+
   const upcomingEvents = filteredEvents
     .filter(event => event.status === "upcoming")
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -233,6 +302,12 @@ export default function OrgCalendarPage() {
               >
                 Today
               </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={openAddEvent}
+              >
+                Add Event
+              </button>
             </div>
           </div>
         </div>
@@ -274,7 +349,7 @@ export default function OrgCalendarPage() {
             </div>
           </div>
 
-          <div className="calendar-side">
+          <div className="calendar-side calendar-side-grid">
             {/* Today's Events */}
             <div className="panel panel-elevated">
             <div className="panel-header">
@@ -476,29 +551,29 @@ export default function OrgCalendarPage() {
                         </span>
                       </td>
                       <td>
-                        <div className="action-buttons">
-                          <button 
-                            className="action-btn edit-btn"
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              setShowEventDetails(true);
-                            }}
-                            title="View Details"
-                          >
-                            <svg viewBox="0 0 24 24">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                              <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                      <div className="action-buttons">
+                        <button 
+                          className="action-btn edit-btn"
+                          onClick={() => {
+                            setSelectedEvent(event);
+                            setShowEventDetails(true);
+                          }}
+                          title="View Details"
+                        >
+                          <svg viewBox="0 0 24 24">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
         {/* Event Details Modal */}
         {showEventDetails && selectedEvent && (
@@ -543,6 +618,81 @@ export default function OrgCalendarPage() {
                     </span>
                   </div>
                 </div>
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => openEditEvent(selectedEvent)}>
+                  Edit
+                </button>
+                <button className="btn btn-primary" type="button" onClick={() => setShowEventDetails(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEventForm && (
+          <div className="modal-backdrop" onClick={() => { setShowEventForm(false); setEditingEvent(null); }}>
+            <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>{editingEvent ? "Edit Event" : "Create Event"}</h3>
+                <button className="modal-close" onClick={() => { setShowEventForm(false); setEditingEvent(null); }} type="button">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="form-grid form-two-col">
+                  <div className="form-group">
+                    <label htmlFor="eventTitle">Title</label>
+                    <input id="eventTitle" value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="eventType">Type</label>
+                    <select id="eventType" value={eventType} onChange={(e) => setEventType(e.target.value as CalendarEvent["type"])}>
+                      <option value="payroll">Payroll</option>
+                      <option value="holiday">Holiday</option>
+                      <option value="meeting">Meeting</option>
+                      <option value="deadline">Deadline</option>
+                      <option value="reminder">Reminder</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="eventDate">Date</label>
+                    <input id="eventDate" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="eventTime">Time</label>
+                    <input id="eventTime" value={eventTime} onChange={(e) => setEventTime(e.target.value)} placeholder="09:00 AM" />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="eventStatus">Status</label>
+                    <select id="eventStatus" value={eventStatus} onChange={(e) => setEventStatus(e.target.value as CalendarEvent["status"])}>
+                      <option value="upcoming">Upcoming</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  <div className="form-group form-two-col" style={{ gridColumn: "1 / -1" }}>
+                    <label htmlFor="eventDescription">Description</label>
+                    <textarea
+                      id="eventDescription"
+                      rows={4}
+                      value={eventDescription}
+                      onChange={(e) => setEventDescription(e.target.value)}
+                      placeholder="Describe the event..."
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => { setShowEventForm(false); setEditingEvent(null); }}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" type="button" onClick={saveEvent}>
+                  {editingEvent ? "Save Changes" : "Create Event"}
+                </button>
               </div>
             </div>
           </div>

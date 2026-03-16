@@ -11,6 +11,7 @@ type LoanRecord = Loan;
 export default function LoansPage() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [loans, setLoans] = useState<LoanRecord[]>([]);
+  const [selectedLoan, setSelectedLoan] = useState<LoanRecord | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingLoanId, setEditingLoanId] = useState<string | null>(null);
   const [loanEmployee, setLoanEmployee] = useState("");
@@ -218,20 +219,37 @@ export default function LoansPage() {
                     <td>
                       <span className={`status-badge status-${loan.status}`}>{loan.status}</span>
                     </td>
-                    <td>
-                      <div className="inline-actions">
-                        {loan.status !== "settled" && (
-                          <button className="secondary" onClick={() => settleLoan(loan.id)} type="button">
-                            Settle
-                          </button>
-                        )}
-                        <button className="neutral" onClick={() => openEditLoanForm(loan)} type="button">
-                          Edit
-                        </button>
-                        <button className="danger" onClick={() => removeLoan(loan.id)} type="button">
-                          Delete
-                        </button>
-                      </div>
+                    <td className="action-cell">
+                      <button
+                        className="action-menu-btn"
+                        type="button"
+                        onClick={() => setSelectedLoan(loan)}
+                        aria-label="Loan actions"
+                      >
+                        <svg viewBox="0 0 24 24">
+                          <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                        </svg>
+                      </button>
+                      {selectedLoan?.id === loan.id && (
+                        <>
+                          <button className="popover-backdrop" type="button" onClick={() => setSelectedLoan(null)} />
+                          <div className="action-popover">
+                            {loan.status !== "settled" && (
+                              <button className="action-popover-item" type="button" onClick={() => { settleLoan(loan.id); setSelectedLoan(null); }}>
+                                Settle
+                              </button>
+                            )}
+                            <button className="action-popover-item" type="button" onClick={() => { openEditLoanForm(loan); setSelectedLoan(null); }}>
+                              Edit
+                            </button>
+                            <button className="action-popover-item danger" type="button" onClick={() => { removeLoan(loan.id); setSelectedLoan(null); }}>
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
