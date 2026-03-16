@@ -28,6 +28,10 @@ type Employee struct {
 	OrgID        string  `json:"orgId"`
 	FullName     string  `json:"fullName"`
 	Email        string  `json:"email"`
+	Phone        string  `json:"phone"`
+	Title        string  `json:"title"`
+	Position     string  `json:"position"`
+	Designation  string  `json:"designation"`
 	Department   string  `json:"department"`
 	Salary       float64 `json:"salary"`
 	PayCycle     string  `json:"payCycle"`
@@ -37,6 +41,7 @@ type Employee struct {
 	NHIF         string  `json:"nhif"`
 	PAYE         string  `json:"paye"`
 	BankName     string  `json:"bankName"`
+	BankAccountName string `json:"bankAccountName"`
 	BankAccount  string  `json:"bankAccount"`
 	ContractType string  `json:"contractType"`
 	Location     string  `json:"location"`
@@ -76,6 +81,10 @@ type App struct {
 	users      map[string]User
 	userByMail map[string]string
 	employees  map[string][]Employee
+	payruns    map[string][]Payrun
+	loans      map[string][]Loan
+	benefits   map[string][]Benefit
+	payslips   map[string][]Payslip
 	approvals  map[string][]Approval
 	settings   map[string]OrgSettings
 	orgNames   map[string]string
@@ -88,6 +97,10 @@ func NewApp(db *sql.DB) *App {
 		users:      make(map[string]User),
 		userByMail: make(map[string]string),
 		employees:  make(map[string][]Employee),
+		payruns:    make(map[string][]Payrun),
+		loans:      make(map[string][]Loan),
+		benefits:   make(map[string][]Benefit),
+		payslips:   make(map[string][]Payslip),
 		approvals:  make(map[string][]Approval),
 		settings:   make(map[string]OrgSettings),
 		orgNames:   make(map[string]string),

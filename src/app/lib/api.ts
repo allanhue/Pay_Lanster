@@ -67,6 +67,10 @@ export type PayrollEmployee = {
   orgId: string;
   fullName: string;
   email: string;
+  phone?: string;
+  title?: string;
+  position?: string;
+  designation?: string;
   department: string;
   salary: number;
   payCycle: "monthly" | "biweekly";
@@ -76,6 +80,7 @@ export type PayrollEmployee = {
   nhif?: string;
   paye?: string;
   bankName?: string;
+  bankAccountName?: string;
   bankAccount?: string;
   contractType?: string;
   location?: string;
@@ -121,6 +126,54 @@ export type ApprovalItem = {
   owner: string;
   requestedOn: string;
   status: "pending" | "approved" | "rejected";
+};
+
+export type Payrun = {
+  id: string;
+  orgId: string;
+  period: string;
+  payday: string;
+  netPayroll: number;
+  grossPay: number;
+  deductions: number;
+  employees: number;
+  status: "draft" | "approved" | "completed" | "processing";
+};
+
+export type Loan = {
+  id: string;
+  orgId: string;
+  employee: string;
+  amount: number;
+  outstanding: number;
+  nextPayment: string;
+  status: "open" | "paused" | "settled";
+  purpose?: string;
+  tenure?: number;
+  rate?: number;
+};
+
+export type Benefit = {
+  id: string;
+  orgId: string;
+  name: string;
+  amount: number;
+  frequency: "Monthly" | "One-time" | "Annual";
+  taxable: boolean;
+  status: "active" | "paused";
+  effectiveDate: string;
+};
+
+export type Payslip = {
+  id: string;
+  orgId: string;
+  employee: string;
+  email: string;
+  period: string;
+  gross: number;
+  deductions: number;
+  net: number;
+  approval: "pending" | "approved" | "rejected";
 };
 
 export type ProjectIntegrationStatus = {
@@ -192,6 +245,9 @@ export const api = {
   addEmployee: (body: Omit<PayrollEmployee, "id" | "status">) =>
     request<PayrollEmployee>("/api/employees", { method: "POST", body: JSON.stringify(body) }),
 
+  updateEmployee: (body: PayrollEmployee) =>
+    request<PayrollEmployee>("/api/employees", { method: "PUT", body: JSON.stringify(body) }),
+
   deleteEmployee: (orgId: string, id: string) =>
     request<{ deleted: boolean }>(`/api/employees?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`, {
       method: "DELETE",
@@ -219,6 +275,43 @@ export const api = {
 
   updateApprovalStatus: (body: { orgId: string; id: string; status: "pending" | "approved" | "rejected" }) =>
     request<ApprovalItem>("/api/approvals", { method: "POST", body: JSON.stringify(body) }),
+
+  listPayruns: (orgId: string) =>
+    request<Payrun[]>(`/api/payruns?orgId=${encodeURIComponent(orgId)}`),
+
+  createPayrun: (body: Omit<Payrun, "id">) =>
+    request<Payrun>("/api/payruns", { method: "POST", body: JSON.stringify(body) }),
+
+  listLoans: (orgId: string) =>
+    request<Loan[]>(`/api/loans?orgId=${encodeURIComponent(orgId)}`),
+
+  createLoan: (body: Omit<Loan, "id">) =>
+    request<Loan>("/api/loans", { method: "POST", body: JSON.stringify(body) }),
+
+  updateLoan: (body: Loan) =>
+    request<Loan>("/api/loans", { method: "PUT", body: JSON.stringify(body) }),
+
+  deleteLoan: (orgId: string, id: string) =>
+    request<{ deleted: boolean }>(`/api/loans?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+
+  listBenefits: (orgId: string) =>
+    request<Benefit[]>(`/api/benefits?orgId=${encodeURIComponent(orgId)}`),
+
+  createBenefit: (body: Omit<Benefit, "id">) =>
+    request<Benefit>("/api/benefits", { method: "POST", body: JSON.stringify(body) }),
+
+  deleteBenefit: (orgId: string, id: string) =>
+    request<{ deleted: boolean }>(`/api/benefits?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+
+  listPayslips: (orgId: string) =>
+    request<Payslip[]>(`/api/payslips?orgId=${encodeURIComponent(orgId)}`),
+
+  createPayslip: (body: Omit<Payslip, "id">) =>
+    request<Payslip>("/api/payslips", { method: "POST", body: JSON.stringify(body) }),
 
   projectIntegrationStatus: () =>
     request<ProjectIntegrationStatus>("/api/integrations/project"),

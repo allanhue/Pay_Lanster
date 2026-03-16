@@ -11,6 +11,10 @@ export default function EmployeePage() {
   const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [title, setTitle] = useState("");
+  const [position, setPosition] = useState("");
+  const [designation, setDesignation] = useState("");
   const [department, setDepartment] = useState("");
   const [salary, setSalary] = useState("");
   const [payCycle, setPayCycle] = useState<"monthly" | "biweekly">("monthly");
@@ -21,6 +25,7 @@ export default function EmployeePage() {
   const [nhif, setNhif] = useState("");
   const [paye, setPaye] = useState("");
   const [bankName, setBankName] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [location, setLocation] = useState("");
   const [hireDate, setHireDate] = useState("");
@@ -31,6 +36,9 @@ export default function EmployeePage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<PayrollEmployee | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<PayrollEmployee | null>(null);
+  const [actionEmployee, setActionEmployee] = useState<PayrollEmployee | null>(null);
+  const [confirmDeleteEmployee, setConfirmDeleteEmployee] = useState<PayrollEmployee | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("all");
@@ -62,6 +70,60 @@ export default function EmployeePage() {
     });
   }, [router]);
 
+  const resetForm = () => {
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setTitle("");
+    setPosition("");
+    setDesignation("");
+    setDepartment("");
+    setSalary("");
+    setPayCycle("monthly");
+    setStatus("active");
+    setContractType("full_time");
+    setTaxId("");
+    setNssf("");
+    setNhif("");
+    setPaye("");
+    setBankName("");
+    setBankAccountName("");
+    setBankAccount("");
+    setLocation("");
+    setHireDate("");
+  };
+
+  const openAddForm = () => {
+    setEditingEmployee(null);
+    resetForm();
+    setShowForm(true);
+  };
+
+  const openEditForm = (employee: PayrollEmployee) => {
+    setEditingEmployee(employee);
+    setFullName(employee.fullName);
+    setEmail(employee.email);
+    setPhone(employee.phone || "");
+    setTitle(employee.title || "");
+    setPosition(employee.position || "");
+    setDesignation(employee.designation || "");
+    setDepartment(employee.department);
+    setSalary(String(employee.salary));
+    setPayCycle(employee.payCycle);
+    setStatus(employee.status);
+    setContractType(employee.contractType || "full_time");
+    setTaxId(employee.taxId || "");
+    setNssf(employee.nssf || "");
+    setNhif(employee.nhif || "");
+    setPaye(employee.paye || "");
+    setBankName(employee.bankName || "");
+    setBankAccountName(employee.bankAccountName || "");
+    setBankAccount(employee.bankAccount || "");
+    setLocation(employee.location || "");
+    setHireDate(employee.hireDate || "");
+    setShowForm(true);
+  };
+
   const onAdd = async (event: FormEvent) => {
     event.preventDefault();
     if (!session?.orgId) {
@@ -71,43 +133,63 @@ export default function EmployeePage() {
     setError("");
     setSaving(true);
     try {
-      await api.addEmployee({
-        orgId: session.orgId,
-        fullName,
-        email,
-        department,
-        salary: Number(salary),
-        payCycle,
-        status,
-        contractType,
-        taxId,
-        nssf,
-        nhif,
-        paye,
-        bankName,
-        bankAccount,
-        location,
-        hireDate,
-      });
+      if (editingEmployee) {
+        await api.updateEmployee({
+          id: editingEmployee.id,
+          orgId: session.orgId,
+          fullName,
+          email,
+          phone,
+          title,
+          position,
+          designation,
+          department,
+          salary: Number(salary),
+          payCycle,
+          status,
+          contractType,
+          taxId,
+          nssf,
+          nhif,
+          paye,
+          bankName,
+          bankAccountName,
+          bankAccount,
+          location,
+          hireDate,
+        });
+      } else {
+        await api.addEmployee({
+          orgId: session.orgId,
+          fullName,
+          email,
+          phone,
+          title,
+          position,
+          designation,
+          department,
+          salary: Number(salary),
+          payCycle,
+          status,
+          contractType,
+          taxId,
+          nssf,
+          nhif,
+          paye,
+          bankName,
+          bankAccountName,
+          bankAccount,
+          location,
+          hireDate,
+        });
+      }
 
-      setFullName("");
-      setEmail("");
-      setDepartment("");
-      setSalary("");
-      setPayCycle("monthly");
-      setStatus("active");
-      setContractType("full_time");
-      setTaxId("");
-      setNssf("");
-      setNhif("");
-      setPaye("");
-      setBankName("");
-      setBankAccount("");
-      setLocation("");
-      setHireDate("");
+      resetForm();
+      setEditingEmployee(null);
+      setShowForm(false);
       await refresh(session.orgId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add employee");
+      setError(err instanceof Error ? err.message : "Could not save employee");
     } finally {
       setSaving(false);
     }
@@ -198,8 +280,6 @@ export default function EmployeePage() {
 
   const onDeleteEmployee = async (employee: PayrollEmployee) => {
     if (!session?.orgId) return;
-    const confirmed = window.confirm(`Delete ${employee.fullName}? This cannot be undone.`);
-    if (!confirmed) return;
     setDeleting(employee.id);
     try {
       await api.deleteEmployee(session.orgId, employee.id);
@@ -228,7 +308,7 @@ export default function EmployeePage() {
             <span className="stat-chip">Active: {activeEmployees}</span>
             <span className="stat-chip">Monthly payroll: ${monthlyPayroll.toLocaleString()}</span>
             <div className="page-header-actions">
-              <button className="btn btn-primary btn-sm" type="button" onClick={() => setShowForm(true)}>
+              <button className="btn btn-primary btn-sm" type="button" onClick={openAddForm}>
                 Add Employee
               </button>
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => setShowImport(true)}>
@@ -258,280 +338,6 @@ export default function EmployeePage() {
           </article>
         </div>
 
-        <article className="panel panel-elevated">
-          <div className="panel-header">
-            <h2>Employee Intake</h2>
-            <p>Add a new team member or import a batch file.</p>
-          </div>
-          {!showForm ? (
-            <div className="empty-state">
-              <p>Start by adding an employee record or importing from CSV.</p>
-              <div className="inline-actions">
-                <button className="btn btn-primary btn-sm" type="button" onClick={() => setShowForm(true)}>
-                  Add Employee
-                </button>
-                <button className="btn btn-secondary btn-sm" type="button" onClick={() => setShowImport(true)}>
-                  Import CSV
-                </button>
-              </div>
-            </div>
-          ) : (
-            <form className="form-grid form-two-col" onSubmit={onAdd}>
-              <div className="form-group">
-                <label htmlFor="employeeName">Full name *</label>
-                <input 
-                  id="employeeName" 
-                  onChange={(e) => setFullName(e.target.value)} 
-                  placeholder="Enter full name" 
-                  required 
-                  value={fullName} 
-                  disabled={saving}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="employeeEmail">Email *</label>
-                <input 
-                  id="employeeEmail" 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="email@company.com" 
-                  required 
-                  type="email" 
-                  value={email}
-                  disabled={saving}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="employeeDepartment">Department *</label>
-                <input
-                  id="employeeDepartment"
-                  onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="e.g., Engineering, Sales, HR"
-                  required
-                  value={department}
-                  disabled={saving}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="employeeSalary">Annual salary *</label>
-                <div className="input-with-suffix">
-                  <input
-                    id="employeeSalary"
-                    min={0}
-                    onChange={(e) => setSalary(e.target.value)}
-                    placeholder="0.00"
-                    required
-                    type="number"
-                    value={salary}
-                    disabled={saving}
-                  />
-                  <span className="input-suffix">USD</span>
-                </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="employeeStatus">Status</label>
-                <select
-                  id="employeeStatus"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as "active" | "on_leave" | "terminated")}
-                  disabled={saving}
-                >
-                  <option value="active">Active</option>
-                  <option value="on_leave">On leave</option>
-                  <option value="terminated">Terminated</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="employeeCycle">Pay cycle *</label>
-                <select 
-                  id="employeeCycle" 
-                  onChange={(e) => setPayCycle(e.target.value as "monthly" | "biweekly")} 
-                  value={payCycle}
-                  disabled={saving}
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="biweekly">Biweekly</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="employeeContract">Contract type</label>
-                <select
-                  id="employeeContract"
-                  value={contractType}
-                  onChange={(e) => setContractType(e.target.value)}
-                  disabled={saving}
-                >
-                  <option value="full_time">Full time</option>
-                  <option value="part_time">Part time</option>
-                  <option value="contractor">Contractor</option>
-                  <option value="intern">Intern</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="employeeLocation">Location</label>
-                <input
-                  id="employeeLocation"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Nairobi, Kenya"
-                  disabled={saving}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="employeeHireDate">Hire date</label>
-                <input
-                  id="employeeHireDate"
-                  type="date"
-                  value={hireDate}
-                  onChange={(e) => setHireDate(e.target.value)}
-                  disabled={saving}
-                />
-              </div>
-              <div className="form-group">
-                <button
-                  className="btn btn-secondary btn-sm"
-                  type="button"
-                  onClick={() => setShowAdvanced((prev) => !prev)}
-                  disabled={saving}
-                >
-                  {showAdvanced ? "Hide payroll details" : "Add payroll details"}
-                </button>
-              </div>
-              {showAdvanced && (
-                <>
-                  <div className="form-group">
-                    <label htmlFor="employeeTaxId">Tax ID</label>
-                    <input
-                      id="employeeTaxId"
-                      value={taxId}
-                      onChange={(e) => setTaxId(e.target.value)}
-                      placeholder="KRA PIN"
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="employeeNssf">NSSF</label>
-                    <input
-                      id="employeeNssf"
-                      value={nssf}
-                      onChange={(e) => setNssf(e.target.value)}
-                      placeholder="NSSF number"
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="employeeNhif">NHIF</label>
-                    <input
-                      id="employeeNhif"
-                      value={nhif}
-                      onChange={(e) => setNhif(e.target.value)}
-                      placeholder="NHIF number"
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="employeePaye">PAYE</label>
-                    <input
-                      id="employeePaye"
-                      value={paye}
-                      onChange={(e) => setPaye(e.target.value)}
-                      placeholder="PAYE code"
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="employeeBankName">Bank name</label>
-                    <input
-                      id="employeeBankName"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      placeholder="Equity Bank"
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="employeeBankAccount">Bank account</label>
-                    <input
-                      id="employeeBankAccount"
-                      value={bankAccount}
-                      onChange={(e) => setBankAccount(e.target.value)}
-                      placeholder="Account number"
-                      disabled={saving}
-                    />
-                  </div>
-                </>
-              )}
-              <div className="form-actions">
-                <button 
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setFullName("");
-                    setEmail("");
-                    setDepartment("");
-                    setSalary("");
-                    setPayCycle("monthly");
-                    setStatus("active");
-                    setContractType("full_time");
-                    setTaxId("");
-                    setNssf("");
-                    setNhif("");
-                    setPaye("");
-                    setBankName("");
-                    setBankAccount("");
-                    setLocation("");
-                    setHireDate("");
-                    setShowAdvanced(false);
-                    setShowForm(false);
-                  }}
-                  disabled={saving}
-                >
-                  Clear
-                </button>
-                <button 
-                  className={`btn btn-primary ${saving ? "btn-loading" : ""}`} 
-                  disabled={saving} 
-                  type="submit"
-                >
-                  {saving && <span className="btn-spinner" />}
-                  {saving ? "Adding..." : "Add Employee"}
-                </button>
-              </div>
-            </form>
-          )}
-        </article>
-
-        <article className="panel panel-elevated">
-          <div className="panel-header">
-            <h2>Employee Statistics</h2>
-            <p>Quick overview of your team</p>
-          </div>
-          <div className="cards-grid two-col">
-            <div className="card-metric">
-              <span className="metric-label">Total Employees</span>
-              <span className="metric-value">{employees.length}</span>
-              <span className="metric-sublabel">Active team members</span>
-            </div>
-            <div className="card-metric">
-              <span className="metric-label">Departments</span>
-              <span className="metric-value">{departments.length}</span>
-              <span className="metric-sublabel">Teams</span>
-            </div>
-            <div className="card-metric">
-              <span className="metric-label">Monthly Payroll</span>
-              <span className="metric-value">
-                ${monthlyPayroll.toLocaleString()}
-              </span>
-              <span className="metric-sublabel">Per month</span>
-            </div>
-            <div className="card-metric">
-              <span className="metric-label">Biweekly Payroll</span>
-              <span className="metric-value">
-                ${biweeklyPayroll.toLocaleString()}
-              </span>
-              <span className="metric-sublabel">Per period</span>
-            </div>
-          </div>
-        </article>
 
         <article className="panel panel-elevated">
           <div className="panel-header">
@@ -699,20 +505,28 @@ export default function EmployeePage() {
                 </thead>
                 <tbody>
                   {filteredAndSortedEmployees.map((employee) => (
-                    <tr key={employee.id}>
+                    <tr
+                      key={employee.id}
+                      className="clickable-row"
+                      onClick={() => {
+                        setSelectedEmployee(employee);
+                        setShowDetails(true);
+                      }}
+                    >
                       <td>
-                        <div className="employee-info">
-                          <div className="employee-avatar">
-                            {employee.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </div>
+                        <div className="employee-info no-avatar">
                           <div className="employee-details">
                             <span className="employee-name">{employee.fullName}</span>
-                            <span className="employee-id">ID: {employee.id.slice(-8)}</span>
+                            <span className="employee-id">ID: {employee.id}</span>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <a href={`mailto:${employee.email}`} className="employee-email">
+                        <a
+                          href={`mailto:${employee.email}`}
+                          className="employee-email"
+                          onClick={(event) => event.stopPropagation()}
+                        >
                           {employee.email}
                         </a>
                       </td>
@@ -741,32 +555,21 @@ export default function EmployeePage() {
                         </span>
                       </td>
                       <td>
-                        <div className="action-buttons">
-                          <button
-                            className="action-btn edit-btn"
-                            title="View Employee"
-                            onClick={() => {
-                              setSelectedEmployee(employee);
-                              setShowDetails(true);
-                            }}
-                          >
-                            <svg viewBox="0 0 24 24">
-                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                            </svg>
-                          </button>
-                          <button
-                            className="action-btn delete-btn"
-                            title="Delete Employee"
-                            onClick={() => onDeleteEmployee(employee)}
-                            disabled={deleting === employee.id}
-                          >
-                            <svg viewBox="0 0 24 24">
-                              <polyline points="3,6 5,6 21,6" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                            </svg>
-                          </button>
-                        </div>
+                        <button
+                          className="action-menu-btn"
+                          type="button"
+                          title="Employee actions"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setActionEmployee(employee);
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24">
+                            <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                            <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+                            <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                          </svg>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -775,6 +578,299 @@ export default function EmployeePage() {
             </div>
           )}
         </article>
+
+        {showForm && (
+          <div className="modal-backdrop" onClick={() => { setShowForm(false); setEditingEmployee(null); }}>
+            <div className="modal-content modal-large" onClick={(event) => event.stopPropagation()}>
+              <div className="modal-header">
+                <h3>{editingEmployee ? "Edit Employee" : "Add Employee"}</h3>
+                <button className="modal-close" onClick={() => { setShowForm(false); setEditingEmployee(null); }} type="button">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body">
+                <form className="form-grid form-two-col" onSubmit={onAdd}>
+                  <div className="form-group">
+                    <label htmlFor="employeeFullName">Full Name</label>
+                    <input
+                      id="employeeFullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g., Jane Adams"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeEmail">Email</label>
+                    <input
+                      id="employeeEmail"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@company.com"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeePhone">Phone Number</label>
+                    <input
+                      id="employeePhone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+254..."
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeDepartment">Department</label>
+                    <input
+                      id="employeeDepartment"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      placeholder="e.g., Operations"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeTitle">Title</label>
+                    <input
+                      id="employeeTitle"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g., Senior Analyst"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeePosition">Position</label>
+                    <input
+                      id="employeePosition"
+                      value={position}
+                      onChange={(e) => setPosition(e.target.value)}
+                      placeholder="e.g., Payroll Specialist"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeDesignation">Designation</label>
+                    <input
+                      id="employeeDesignation"
+                      value={designation}
+                      onChange={(e) => setDesignation(e.target.value)}
+                      placeholder="e.g., Grade 5"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeSalary">Annual Salary</label>
+                    <input
+                      id="employeeSalary"
+                      type="number"
+                      min={0}
+                      value={salary}
+                      onChange={(e) => setSalary(e.target.value)}
+                      placeholder="0"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeePayCycle">Pay Cycle</label>
+                    <select id="employeePayCycle" value={payCycle} onChange={(e) => setPayCycle(e.target.value as typeof payCycle)}>
+                      <option value="monthly">Monthly</option>
+                      <option value="biweekly">Biweekly</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeStatus">Status</label>
+                    <select id="employeeStatus" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
+                      <option value="active">Active</option>
+                      <option value="on_leave">On leave</option>
+                      <option value="terminated">Terminated</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeContractType">Contract Type</label>
+                    <input
+                      id="employeeContractType"
+                      value={contractType}
+                      onChange={(e) => setContractType(e.target.value)}
+                      placeholder="full_time"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeLocation">Location</label>
+                    <input
+                      id="employeeLocation"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="e.g., Nairobi"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeHireDate">Hire Date</label>
+                    <input
+                      id="employeeHireDate"
+                      type="date"
+                      value={hireDate}
+                      onChange={(e) => setHireDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeBankName">Bank Name</label>
+                    <input
+                      id="employeeBankName"
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      placeholder="e.g., KCB"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeBankAccountName">Bank Account Name</label>
+                    <input
+                      id="employeeBankAccountName"
+                      value={bankAccountName}
+                      onChange={(e) => setBankAccountName(e.target.value)}
+                      placeholder="Account name"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeBankAccount">Bank Account Number</label>
+                    <input
+                      id="employeeBankAccount"
+                      value={bankAccount}
+                      onChange={(e) => setBankAccount(e.target.value)}
+                      placeholder="Account number"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeTaxId">Tax ID</label>
+                    <input
+                      id="employeeTaxId"
+                      value={taxId}
+                      onChange={(e) => setTaxId(e.target.value)}
+                      placeholder="KRA PIN"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeNssf">NSSF</label>
+                    <input
+                      id="employeeNssf"
+                      value={nssf}
+                      onChange={(e) => setNssf(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeeNhif">NHIF</label>
+                    <input
+                      id="employeeNhif"
+                      value={nhif}
+                      onChange={(e) => setNhif(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="employeePaye">PAYE</label>
+                    <input
+                      id="employeePaye"
+                      value={paye}
+                      onChange={(e) => setPaye(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-actions">
+                    <button className="btn btn-secondary" type="button" onClick={() => { setShowForm(false); setEditingEmployee(null); }}>
+                      Cancel
+                    </button>
+                    <button className={`btn btn-primary ${saving ? "btn-loading" : ""}`} type="submit" disabled={saving}>
+                      {saving && <span className="btn-spinner" />}
+                      {saving ? "Saving..." : editingEmployee ? "Save Changes" : "Add Employee"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {actionEmployee && (
+          <div className="modal-backdrop" onClick={() => setActionEmployee(null)}>
+            <div className="modal-content modal-mini" onClick={(event) => event.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Employee Actions</h3>
+                <button className="modal-close" onClick={() => setActionEmployee(null)} type="button">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="action-menu">
+                  <button
+                    className="action-menu-item"
+                    type="button"
+                    onClick={() => {
+                      setSelectedEmployee(actionEmployee);
+                      setShowDetails(true);
+                      setActionEmployee(null);
+                    }}
+                  >
+                    View details
+                  </button>
+                  <button
+                    className="action-menu-item"
+                    type="button"
+                    onClick={() => {
+                      openEditForm(actionEmployee);
+                      setActionEmployee(null);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="action-menu-item danger"
+                    type="button"
+                    onClick={() => {
+                      setConfirmDeleteEmployee(actionEmployee);
+                      setActionEmployee(null);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {confirmDeleteEmployee && (
+          <div className="modal-backdrop" onClick={() => setConfirmDeleteEmployee(null)}>
+            <div className="modal-content modal-mini" onClick={(event) => event.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Delete Employee</h3>
+                <button className="modal-close" onClick={() => setConfirmDeleteEmployee(null)} type="button">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <div className="modal-body">
+                <p className="muted-text">Delete {confirmDeleteEmployee.fullName}? This action cannot be undone.</p>
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => setConfirmDeleteEmployee(null)}>
+                  Cancel
+                </button>
+                <button
+                  className="danger"
+                  type="button"
+                  onClick={() => {
+                    onDeleteEmployee(confirmDeleteEmployee);
+                    setConfirmDeleteEmployee(null);
+                  }}
+                  disabled={deleting === confirmDeleteEmployee.id}
+                >
+                  {deleting === confirmDeleteEmployee.id ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showImport && (
           <div className="modal-backdrop" onClick={() => setShowImport(false)}>
@@ -807,87 +903,145 @@ export default function EmployeePage() {
         )}
 
         {showDetails && selectedEmployee && (
-          <div className="modal-backdrop" onClick={() => setShowDetails(false)}>
-            <div className="modal-content modal-large" onClick={(event) => event.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Employee Details</h3>
-                <button className="modal-close" onClick={() => setShowDetails(false)} type="button">
+          <>
+            <button className="detail-drawer-backdrop" type="button" onClick={() => setShowDetails(false)} aria-label="Close details" />
+            <aside className="detail-drawer" aria-label="Employee details">
+              <div className="detail-drawer-header">
+                <div className="detail-avatar">
+                  {selectedEmployee.fullName.split(" ").map(n => n[0]).join("").toUpperCase()}
+                </div>
+                <div className="detail-header-text">
+                  <h3>{selectedEmployee.fullName}</h3>
+                  <span className="detail-id">{selectedEmployee.id}</span>
+                  <span className="detail-sub">
+                    {(selectedEmployee.title || selectedEmployee.position || selectedEmployee.designation || selectedEmployee.department || "").toString()}
+                  </span>
+                </div>
+                <button className="detail-close" type="button" onClick={() => setShowDetails(false)}>
                   <svg viewBox="0 0 24 24">
                     <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </button>
               </div>
-              <div className="modal-body">
-                <div className="detail-row">
-                  <span className="detail-label">Name</span>
-                  <span className="detail-value">{selectedEmployee.fullName}</span>
+              <div className="detail-drawer-body">
+                <div className="detail-section">
+                  <h4>Contact</h4>
+                  <div className="detail-grid">
+                    <div className="detail-row">
+                      <span className="detail-label">Email</span>
+                      <span className="detail-value">{selectedEmployee.email || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Phone</span>
+                      <span className="detail-value">{selectedEmployee.phone || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Location</span>
+                      <span className="detail-value">{selectedEmployee.location || "-"}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Email</span>
-                  <span className="detail-value">{selectedEmployee.email}</span>
+
+                <div className="detail-section">
+                  <h4>Role & Status</h4>
+                  <div className="detail-grid">
+                    <div className="detail-row">
+                      <span className="detail-label">Department</span>
+                      <span className="detail-value">{selectedEmployee.department || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Title</span>
+                      <span className="detail-value">{selectedEmployee.title || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Position</span>
+                      <span className="detail-value">{selectedEmployee.position || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Designation</span>
+                      <span className="detail-value">{selectedEmployee.designation || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Status</span>
+                      <span className="detail-value">{selectedEmployee.status.replace("_", " ")}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Hire Date</span>
+                      <span className="detail-value">{selectedEmployee.hireDate || "-"}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Department</span>
-                  <span className="detail-value">{selectedEmployee.department}</span>
+
+                <div className="detail-section">
+                  <h4>Payroll</h4>
+                  <div className="detail-grid">
+                    <div className="detail-row">
+                      <span className="detail-label">Pay Cycle</span>
+                      <span className="detail-value">{selectedEmployee.payCycle}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Annual Salary</span>
+                      <span className="detail-value">${selectedEmployee.salary.toLocaleString()}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Contract</span>
+                      <span className="detail-value">{selectedEmployee.contractType || "-"}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Pay Cycle</span>
-                  <span className="detail-value">{selectedEmployee.payCycle}</span>
+
+                <div className="detail-section">
+                  <h4>Banking</h4>
+                  <div className="detail-grid">
+                    <div className="detail-row">
+                      <span className="detail-label">Bank Name</span>
+                      <span className="detail-value">{selectedEmployee.bankName || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Account Name</span>
+                      <span className="detail-value">{selectedEmployee.bankAccountName || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">Account Number</span>
+                      <span className="detail-value">{selectedEmployee.bankAccount || "-"}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Annual Salary</span>
-                  <span className="detail-value">${selectedEmployee.salary.toLocaleString()}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Status</span>
-                  <span className="detail-value">{selectedEmployee.status.replace("_", " ")}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Contract Type</span>
-                  <span className="detail-value">{selectedEmployee.contractType || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Location</span>
-                  <span className="detail-value">{selectedEmployee.location || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Hire Date</span>
-                  <span className="detail-value">{selectedEmployee.hireDate || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Tax ID</span>
-                  <span className="detail-value">{selectedEmployee.taxId || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">NSSF</span>
-                  <span className="detail-value">{selectedEmployee.nssf || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">NHIF</span>
-                  <span className="detail-value">{selectedEmployee.nhif || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">PAYE</span>
-                  <span className="detail-value">{selectedEmployee.paye || "-"}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Bank</span>
-                  <span className="detail-value">
-                    {(selectedEmployee.bankName || "-") + (selectedEmployee.bankAccount ? ` • ${selectedEmployee.bankAccount}` : "")}
-                  </span>
+
+                <div className="detail-section">
+                  <h4>Compliance</h4>
+                  <div className="detail-grid">
+                    <div className="detail-row">
+                      <span className="detail-label">Tax ID</span>
+                      <span className="detail-value">{selectedEmployee.taxId || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">NSSF</span>
+                      <span className="detail-value">{selectedEmployee.nssf || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">NHIF</span>
+                      <span className="detail-value">{selectedEmployee.nhif || "-"}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">PAYE</span>
+                      <span className="detail-value">{selectedEmployee.paye || "-"}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="modal-actions">
-                <button className="btn btn-secondary" type="button" onClick={() => setShowDetails(false)}>
-                  Close
-                </button>
-                <button className="btn btn-primary" type="button">
+              <div className="detail-drawer-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => { setShowDetails(false); openEditForm(selectedEmployee); }}>
                   Edit
                 </button>
+                <button className="danger" type="button" onClick={() => { setShowDetails(false); setConfirmDeleteEmployee(selectedEmployee); }}>
+                  Delete
+                </button>
               </div>
-            </div>
-          </div>
+            </aside>
+          </>
         )}
+
       </section>
     </main>
   );

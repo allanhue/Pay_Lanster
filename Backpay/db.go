@@ -75,6 +75,10 @@ func InitSchema(db *sql.DB) error {
       org_id TEXT REFERENCES organizations(id),
       full_name TEXT NOT NULL,
       email TEXT,
+      phone TEXT,
+      title TEXT,
+      position TEXT,
+      designation TEXT,
       department TEXT,
       salary NUMERIC NOT NULL,
       pay_cycle TEXT,
@@ -84,38 +88,47 @@ func InitSchema(db *sql.DB) error {
       nhif TEXT,
       paye TEXT,
       bank_name TEXT,
+      bank_account_name TEXT,
       bank_account TEXT,
       contract_type TEXT,
       location TEXT,
       hire_date DATE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
-		`CREATE TABLE IF NOT EXISTS payruns (
+	`CREATE TABLE IF NOT EXISTS payruns (
       id TEXT PRIMARY KEY,
       org_id TEXT REFERENCES organizations(id),
       period TEXT,
       payday DATE,
       net_payroll NUMERIC,
+      gross_pay NUMERIC,
+      deductions NUMERIC,
       employees INT,
       status TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
-		`CREATE TABLE IF NOT EXISTS loans (
+	`CREATE TABLE IF NOT EXISTS loans (
       id TEXT PRIMARY KEY,
       org_id TEXT REFERENCES organizations(id),
       employee TEXT NOT NULL,
       amount NUMERIC NOT NULL,
       outstanding NUMERIC NOT NULL,
       next_payment DATE,
+      purpose TEXT,
+      tenure INT,
+      rate NUMERIC,
       status TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
-		`CREATE TABLE IF NOT EXISTS benefits (
+	`CREATE TABLE IF NOT EXISTS benefits (
       id TEXT PRIMARY KEY,
       org_id TEXT REFERENCES organizations(id),
       name TEXT NOT NULL,
       amount NUMERIC,
       frequency TEXT,
+      taxable BOOLEAN DEFAULT false,
+      status TEXT DEFAULT 'active',
+      effective_date DATE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
 		`CREATE TABLE IF NOT EXISTS approvals (
@@ -129,10 +142,11 @@ func InitSchema(db *sql.DB) error {
       decided_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
-		`CREATE TABLE IF NOT EXISTS payslips (
+	`CREATE TABLE IF NOT EXISTS payslips (
       id TEXT PRIMARY KEY,
       org_id TEXT REFERENCES organizations(id),
       employee_name TEXT NOT NULL,
+      employee_email TEXT,
       period TEXT NOT NULL,
       gross_pay NUMERIC NOT NULL,
       deductions NUMERIC NOT NULL,
@@ -164,10 +178,24 @@ func InitSchema(db *sql.DB) error {
 		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS nhif TEXT`,
 		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS paye TEXT`,
 		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS bank_name TEXT`,
+		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS bank_account_name TEXT`,
 		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS bank_account TEXT`,
 		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS contract_type TEXT`,
 		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS location TEXT`,
 		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS hire_date DATE`,
+		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS phone TEXT`,
+		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS title TEXT`,
+		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS position TEXT`,
+		`ALTER TABLE employees ADD COLUMN IF NOT EXISTS designation TEXT`,
+		`ALTER TABLE payruns ADD COLUMN IF NOT EXISTS gross_pay NUMERIC`,
+		`ALTER TABLE payruns ADD COLUMN IF NOT EXISTS deductions NUMERIC`,
+		`ALTER TABLE loans ADD COLUMN IF NOT EXISTS purpose TEXT`,
+		`ALTER TABLE loans ADD COLUMN IF NOT EXISTS tenure INT`,
+		`ALTER TABLE loans ADD COLUMN IF NOT EXISTS rate NUMERIC`,
+		`ALTER TABLE benefits ADD COLUMN IF NOT EXISTS taxable BOOLEAN DEFAULT false`,
+		`ALTER TABLE benefits ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`,
+		`ALTER TABLE benefits ADD COLUMN IF NOT EXISTS effective_date DATE`,
+		`ALTER TABLE payslips ADD COLUMN IF NOT EXISTS employee_email TEXT`,
 	}
 	for _, stmt := range alterStatements {
 		if _, err := db.Exec(stmt); err != nil {

@@ -56,14 +56,14 @@ export default function SupportPage() {
       <section className="content content-wide">
         <div className="page-header">
           <h1>Support Center</h1>
-          <p>Need help with payroll? Contact our team and we'll get back to you within 24-48 hours.</p>
+          <p>Need help with payroll? Contact our team and we'll get back to you within 2-24 hours.</p>
         </div>
 
         {success && <div className="alert alert-success">{success}</div>}
         {error && <div className="alert alert-error">{error}</div>}
 
-        <div className="cards-grid two-col">
-          <div className="panel panel-elevated">
+        <div className="support-grid">
+          <div className="panel panel-elevated support-form-panel">
             <div className="panel-header">
               <h2>Contact Support</h2>
               <p>Send us a message and we'll respond via email</p>
@@ -158,29 +158,6 @@ export default function SupportPage() {
             </form>
           </div>
 
-          <div>
-            <div className="panel panel-info">
-              <div className="info-header">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M12 16v-4M12 8h.01" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-                <h3>Response Time</h3>
-              </div>
-              <p>We typically respond within <strong>24-48 hours</strong> during business days. For urgent payroll issues, please select "Payroll Issue" as the subject.</p>
-            </div>
-
-            <div className="panel panel-elevated">
-              <div className="panel-header">
-                <h3>Support Email</h3>
-              </div>
-              <div className="info-card">
-                <p>Reach us directly at <strong>support@payrolllanster.com</strong> for escalations.</p>
-                <p className="muted-text">This address can be updated in backend via `SUPPORT_MAIL_TO`.</p>
-              </div>
-            </div>
-
-          </div>
         </div>
       </section>
     </main>

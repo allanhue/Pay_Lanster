@@ -10,6 +10,9 @@ export default function ReportsPage() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [reports, setReports] = useState<Array<{ id: string; title: string; period: string; category: string; status: string; updatedAt: string }>>([]);
   const [fileType, setFileType] = useState("PDF");
+  const [exportPeriod, setExportPeriod] = useState("current_month");
+  const [exportDepartment, setExportDepartment] = useState("all");
+  const [exportStatus, setExportStatus] = useState("all");
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +35,22 @@ export default function ReportsPage() {
 
   const readyReports = useMemo(() => reports.filter((report) => report.status === "ready").length, [reports]);
 
+  const reportsWithActivity = useMemo(() => {
+    const exists = reports.some((report) => report.title.toLowerCase().includes("activity log"));
+    if (exists) return reports;
+    return [
+      {
+        id: "RP-ACT",
+        title: "Activity Log",
+        period: "Last 30 days",
+        category: "Audit",
+        status: "ready",
+        updatedAt: "Today",
+      },
+      ...reports,
+    ];
+  }, [reports]);
+
   if (!session) {
     return <main className="centered">Loading...</main>;
   }
@@ -45,23 +64,6 @@ export default function ReportsPage() {
           <p>Generate payroll reports in multiple file formats.</p>
         </div>
 
-        <div className="cards-grid three-col">
-          <article className="card card-metric">
-            <span className="metric-label">Reports Ready</span>
-            <span className="metric-value">{readyReports}</span>
-            <span className="metric-sublabel">Available to export</span>
-          </article>
-          <article className="card card-metric">
-            <span className="metric-label">File Type</span>
-            <span className="metric-value">{fileType}</span>
-            <span className="metric-sublabel">Selected format</span>
-          </article>
-          <article className="card card-metric">
-            <span className="metric-label">Last Update</span>
-            <span className="metric-value">{reports[0]?.updatedAt || "—"}</span>
-            <span className="metric-sublabel">Recent refresh</span>
-          </article>
-        </div>
 
         <div className="panel panel-elevated">
           <div className="panel-header">
@@ -80,6 +82,35 @@ export default function ReportsPage() {
               </button>
             </div>
           </div>
+          <div className="filter-row">
+            <div className="form-group">
+              <label htmlFor="exportPeriod">Period</label>
+              <select id="exportPeriod" value={exportPeriod} onChange={(e) => setExportPeriod(e.target.value)}>
+                <option value="current_month">Current month</option>
+                <option value="last_month">Last month</option>
+                <option value="quarter">This quarter</option>
+                <option value="year_to_date">Year to date</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="exportDepartment">Department</label>
+              <select id="exportDepartment" value={exportDepartment} onChange={(e) => setExportDepartment(e.target.value)}>
+                <option value="all">All departments</option>
+                <option value="operations">Operations</option>
+                <option value="finance">Finance</option>
+                <option value="engineering">Engineering</option>
+                <option value="hr">HR</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="exportStatus">Status</label>
+              <select id="exportStatus" value={exportStatus} onChange={(e) => setExportStatus(e.target.value)}>
+                <option value="all">All statuses</option>
+                <option value="ready">Ready</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+          </div>
           <div className="export-grid">
             <article className="export-card">
               <h3>Payroll Summary</h3>
@@ -95,6 +126,11 @@ export default function ReportsPage() {
               <h3>Loan Schedules</h3>
               <p>Active loan balances and repayment schedules.</p>
               <span className="status-badge status-pending">Draft</span>
+            </article>
+            <article className="export-card">
+              <h3>Activity Log</h3>
+              <p>Admin actions and approval events across the payroll cycle.</p>
+              <span className="status-badge status-approved">Ready</span>
             </article>
           </div>
         </div>
@@ -116,7 +152,7 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {reports.map((report) => (
+              {reportsWithActivity.map((report) => (
                 <tr key={report.id}>
                   <td>{report.title}</td>
                   <td>{report.category}</td>

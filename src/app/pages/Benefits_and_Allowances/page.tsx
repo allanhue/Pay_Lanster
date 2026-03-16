@@ -1,19 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
-import { api } from "@/app/lib/api";
+import { api, type Benefit } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
-
-type Benefit = {
-  name: string;
-  amount: number;
-  frequency: "Monthly" | "One-time" | "Annual";
-  taxable: boolean;
-  status: "active" | "paused";
-  effectiveDate: string;
-};
 
 export default function BenefitsAndAllowancesPage() {
   const [session, setSession] = useState<UserSession | null>(null);
@@ -27,6 +18,12 @@ export default function BenefitsAndAllowancesPage() {
   const [adding, setAdding] = useState(false);
   const router = useRouter();
 
+  const summary = useMemo(() => ({
+    total: benefits.length,
+    active: benefits.filter((benefit) => benefit.status === "active").length,
+    paused: benefits.filter((benefit) => benefit.status === "paused").length,
+  }), [benefits]);
+
   useEffect(() => {
     const current = readSession();
     if (!current) {
@@ -38,32 +35,45 @@ export default function BenefitsAndAllowancesPage() {
       return;
     }
     setSession(current);
-    api.getDemoData().then((data) => {
-      setBenefits(Array.isArray(data.benefits) ? (data.benefits as Benefit[]) : []);
-    }).catch(() => {
-      setBenefits([]);
-    });
+    api.listBenefits(current.orgId)
+      .then((data) => setBenefits(Array.isArray(data) ? data : []))
+      .catch(() => setBenefits([]));
   }, [router]);
 
-  const handleAdd = (event: FormEvent) => {
+  const handleAdd = async (event: FormEvent) => {
     event.preventDefault();
-    if (!name || !amount) return;
+    if (!session?.orgId || !name || !amount) return;
     setAdding(true);
 
-    setBenefits((prev) => [
-      ...prev,
-      { name, amount: Number(amount), frequency, taxable, status, effectiveDate: effectiveDate || new Date().toISOString().slice(0, 10) },
-    ]);
-    setName("");
-    setAmount("");
-    setTaxable(true);
-    setStatus("active");
-    setEffectiveDate("");
-    setTimeout(() => setAdding(false), 250);
+    try {
+      const created = await api.createBenefit({
+        orgId: session.orgId,
+        name,
+        amount: Number(amount),
+        frequency,
+        taxable,
+        status,
+        effectiveDate: effectiveDate || new Date().toISOString().slice(0, 10),
+      });
+      setBenefits((prev) => [created, ...prev]);
+      setName("");
+      setAmount("");
+      setTaxable(true);
+      setStatus("active");
+      setEffectiveDate("");
+    } finally {
+      setAdding(false);
+    }
   };
 
-  const removeBenefit = (name: string) => {
-    setBenefits((prev) => prev.filter((item) => item.name !== name));
+  const removeBenefit = async (id: string) => {
+    if (!session?.orgId) return;
+    try {
+      await api.deleteBenefit(session.orgId, id);
+      setBenefits((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      // ignore for now
+    }
   };
 
   if (!session) {
@@ -76,34 +86,31 @@ export default function BenefitsAndAllowancesPage() {
       <section className="content content-wide">
         <div className="page-header">
           <h1>Benefits & Allowances</h1>
-          <p>Design perks that flow directly into payroll calculations.</p>
+          <p>Define recurring perks and one-off allowances for your team.</p>
         </div>
 
-        <div className="cards-grid three-col">
-          <article className="card card-metric">
-            <span className="metric-label">Active Benefits</span>
-            <span className="metric-value">{benefits.filter((item) => item.status === "active").length}</span>
-            <span className="metric-sublabel">Currently applied</span>
-          </article>
-          <article className="card card-metric">
-            <span className="metric-label">Taxable Benefits</span>
-            <span className="metric-value">{benefits.filter((item) => item.taxable).length}</span>
-            <span className="metric-sublabel">Included in PAYE</span>
-          </article>
-          <article className="card card-metric">
-            <span className="metric-label">Monthly Allowances</span>
-            <span className="metric-value">{benefits.filter((item) => item.frequency === "Monthly").length}</span>
-            <span className="metric-sublabel">Recurring payouts</span>
-          </article>
+        <div className="benefit-summary">
+          <div className="summary-chip">
+            <span>Total</span>
+            <strong>{summary.total}</strong>
+          </div>
+          <div className="summary-chip">
+            <span>Active</span>
+            <strong>{summary.active}</strong>
+          </div>
+          <div className="summary-chip">
+            <span>Paused</span>
+            <strong>{summary.paused}</strong>
+          </div>
         </div>
 
-        <div className="split-grid">
-          <article className="panel panel-elevated">
+        <div className="benefits-grid">
+          <article className="panel panel-elevated benefit-form-panel">
             <div className="panel-header">
               <h2>Configure Allowance</h2>
               <p>Create new perks and define payroll rules.</p>
             </div>
-            <form className="form-grid" onSubmit={handleAdd}>
+            <form className="form-grid benefit-form" onSubmit={handleAdd}>
               <div className="form-group">
                 <label htmlFor="benefit-name">Benefit name</label>
                 <input
@@ -180,12 +187,12 @@ export default function BenefitsAndAllowancesPage() {
             </form>
           </article>
 
-          <article className="panel panel-elevated">
+          <article className="panel panel-elevated benefit-table-panel">
             <div className="panel-header">
               <h2>Configured Perks</h2>
               <p>Review your active and paused benefits.</p>
             </div>
-            <table className="data-table">
+            <table className="data-table benefit-table">
               <thead>
                 <tr>
                   <th>Benefit</th>
@@ -199,7 +206,7 @@ export default function BenefitsAndAllowancesPage() {
               </thead>
               <tbody>
                 {benefits.map((benefit) => (
-                  <tr key={`${benefit.name}-${benefit.frequency}`}>
+                  <tr key={benefit.id}>
                     <td>{benefit.name}</td>
                     <td>
                       {benefit.amount.toLocaleString(undefined, {
@@ -214,7 +221,7 @@ export default function BenefitsAndAllowancesPage() {
                     </td>
                     <td>{benefit.effectiveDate || "-"}</td>
                     <td>
-                      <button className="danger" type="button" onClick={() => removeBenefit(benefit.name)}>
+                      <button className="danger" type="button" onClick={() => removeBenefit(benefit.id)}>
                         Delete
                       </button>
                     </td>

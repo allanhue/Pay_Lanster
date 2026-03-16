@@ -3,22 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
-import { api } from "@/app/lib/api";
+import { api, type Loan } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
-type LoanRecord = {
-  id: string;
-  employee: string;
-  amount: number;
-  outstanding: number;
-  nextPayment: string;
-  status: "open" | "paused" | "settled";
-};
+type LoanRecord = Loan;
 
 export default function LoansPage() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingLoanId, setEditingLoanId] = useState<string | null>(null);
   const [loanEmployee, setLoanEmployee] = useState("");
   const [loanAmount, setLoanAmount] = useState("");
   const [loanOutstanding, setLoanOutstanding] = useState("");
@@ -39,50 +33,30 @@ export default function LoansPage() {
       return;
     }
     setSession(current);
-    api.getDemoData().then((data) => {
-      setLoans(Array.isArray(data.loans) ? (data.loans as LoanRecord[]) : []);
-    }).catch(() => {
-      setLoans([]);
-    });
+    api.listLoans(current.orgId)
+      .then((data) => setLoans(Array.isArray(data) ? data : []))
+      .catch(() => setLoans([]));
   }, [router]);
 
-  const settleLoan = (id: string) => {
-    setLoans((prev) =>
-      prev.map((loan) =>
-        loan.id === id
-          ? {
-              ...loan,
-              outstanding: 0,
-              status: "settled",
-              nextPayment: "-",
-            }
-          : loan
-      )
-    );
+  const settleLoan = async (id: string) => {
+    if (!session?.orgId) return;
+    const target = loans.find((loan) => loan.id === id);
+    if (!target) return;
+    try {
+      const updated = await api.updateLoan({
+        ...target,
+        orgId: session.orgId,
+        outstanding: 0,
+        status: "settled",
+        nextPayment: "",
+      });
+      setLoans((prev) => prev.map((loan) => (loan.id === id ? updated : loan)));
+    } catch {
+      // ignore for now
+    }
   };
 
-  const onAddLoan = (event: React.FormEvent) => {
-    event.preventDefault();
-    const amount = Number(loanAmount);
-    if (!loanEmployee || !amount) {
-      return;
-    }
-
-    const outstanding = loanOutstanding ? Number(loanOutstanding) : amount;
-    const nextPayment = loanNextPayment || "TBD";
-
-    setLoans((prev) => [
-      {
-        id: `LN-${Date.now().toString().slice(-4)}`,
-        employee: loanEmployee,
-        amount,
-        outstanding,
-        nextPayment,
-        status: "open",
-      },
-      ...prev,
-    ]);
-
+  const resetLoanForm = () => {
     setLoanEmployee("");
     setLoanAmount("");
     setLoanOutstanding("");
@@ -90,11 +64,84 @@ export default function LoansPage() {
     setLoanPurpose("");
     setLoanTenure("");
     setLoanRate("");
-    setShowForm(false);
+    setEditingLoanId(null);
   };
 
-  const removeLoan = (id: string) => {
-    setLoans((prev) => prev.filter((loan) => loan.id !== id));
+  const openNewLoanForm = () => {
+    resetLoanForm();
+    setShowForm(true);
+  };
+
+  const openEditLoanForm = (loan: LoanRecord) => {
+    setEditingLoanId(loan.id);
+    setLoanEmployee(loan.employee);
+    setLoanAmount(String(loan.amount));
+    setLoanOutstanding(String(loan.outstanding));
+    setLoanNextPayment(loan.nextPayment === "-" ? "" : loan.nextPayment);
+    setLoanPurpose(loan.purpose ?? "");
+    setLoanTenure(loan.tenure ? String(loan.tenure) : "");
+    setLoanRate(loan.rate ? String(loan.rate) : "");
+    setShowForm(true);
+  };
+
+  const onAddLoan = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!session?.orgId) return;
+    const amount = Number(loanAmount);
+    if (!loanEmployee || !amount) {
+      return;
+    }
+
+    const outstanding = loanOutstanding ? Number(loanOutstanding) : amount;
+    const nextPayment = loanNextPayment || "TBD";
+    const tenure = loanTenure ? Number(loanTenure) : undefined;
+    const rate = loanRate ? Number(loanRate) : undefined;
+
+    const editingStatus = editingLoanId ? loans.find((loan) => loan.id === editingLoanId)?.status : undefined;
+    try {
+      if (editingLoanId) {
+        const updated = await api.updateLoan({
+          id: editingLoanId,
+          orgId: session.orgId,
+          employee: loanEmployee,
+          amount,
+          outstanding,
+          nextPayment,
+          status: editingStatus || "open",
+          purpose: loanPurpose || undefined,
+          tenure,
+          rate,
+        });
+        setLoans((prev) => prev.map((loan) => (loan.id === updated.id ? updated : loan)));
+      } else {
+        const created = await api.createLoan({
+          orgId: session.orgId,
+          employee: loanEmployee,
+          amount,
+          outstanding,
+          nextPayment,
+          status: "open",
+          purpose: loanPurpose || undefined,
+          tenure,
+          rate,
+        });
+        setLoans((prev) => [created, ...prev]);
+      }
+      resetLoanForm();
+      setShowForm(false);
+    } catch {
+      // ignore for now
+    }
+  };
+
+  const removeLoan = async (id: string) => {
+    if (!session?.orgId) return;
+    try {
+      await api.deleteLoan(session.orgId, id);
+      setLoans((prev) => prev.filter((loan) => loan.id !== id));
+    } catch {
+      // ignore for now
+    }
   };
 
   const globeSummary = useMemo(
@@ -120,7 +167,7 @@ export default function LoansPage() {
             <p>Track employer-assisted loans alongside payroll runs.</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn btn-primary btn-sm" type="button" onClick={() => setShowForm(true)}>
+            <button className="btn btn-primary btn-sm" type="button" onClick={openNewLoanForm}>
               Add Loan
             </button>
           </div>
@@ -167,21 +214,24 @@ export default function LoansPage() {
                     <td>{loan.employee}</td>
                     <td>${loan.amount.toLocaleString()}</td>
                     <td>${loan.outstanding.toLocaleString()}</td>
-                    <td>{loan.nextPayment}</td>
+                    <td>{loan.nextPayment || "-"}</td>
                     <td>
                       <span className={`status-badge status-${loan.status}`}>{loan.status}</span>
                     </td>
                     <td>
-                      {loan.status !== "settled" && (
-                        <div className="inline-actions">
+                      <div className="inline-actions">
+                        {loan.status !== "settled" && (
                           <button className="secondary" onClick={() => settleLoan(loan.id)} type="button">
                             Settle
                           </button>
-                          <button className="danger" onClick={() => removeLoan(loan.id)} type="button">
-                            Delete
-                          </button>
-                        </div>
-                      )}
+                        )}
+                        <button className="neutral" onClick={() => openEditLoanForm(loan)} type="button">
+                          Edit
+                        </button>
+                        <button className="danger" onClick={() => removeLoan(loan.id)} type="button">
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -191,11 +241,11 @@ export default function LoansPage() {
         </article>
 
         {showForm && (
-          <div className="modal-backdrop" onClick={() => setShowForm(false)}>
+          <div className="modal-backdrop" onClick={() => { setShowForm(false); resetLoanForm(); }}>
             <div className="modal-content modal-large" onClick={(event) => event.stopPropagation()}>
               <div className="modal-header">
-                <h3>New Loan</h3>
-                <button className="modal-close" onClick={() => setShowForm(false)} type="button">
+                <h3>{editingLoanId ? "Edit Loan" : "New Loan"}</h3>
+                <button className="modal-close" onClick={() => { setShowForm(false); resetLoanForm(); }} type="button">
                   <svg viewBox="0 0 24 24">
                     <path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
@@ -260,9 +310,9 @@ export default function LoansPage() {
                     <label htmlFor="loanNextPayment">Next Payment</label>
                     <input
                       id="loanNextPayment"
+                      type="date"
                       value={loanNextPayment}
                       onChange={(event) => setLoanNextPayment(event.target.value)}
-                      placeholder="Apr 30"
                     />
                   </div>
                   <div className="form-group">
@@ -277,11 +327,11 @@ export default function LoansPage() {
                     />
                   </div>
                   <div className="form-actions">
-                    <button className="btn btn-secondary" type="button" onClick={() => setShowForm(false)}>
+                    <button className="btn btn-secondary" type="button" onClick={() => { setShowForm(false); resetLoanForm(); }}>
                       Cancel
                     </button>
                     <button className="btn btn-primary" type="submit">
-                      Create Loan
+                      {editingLoanId ? "Save Changes" : "Create Loan"}
                     </button>
                   </div>
                 </form>

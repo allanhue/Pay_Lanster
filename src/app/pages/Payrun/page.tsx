@@ -3,20 +3,11 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
-import { api } from "@/app/lib/api";
+import { api, type Payrun } from "@/app/lib/api";
 import { addNotification } from "@/app/lib/notifications";
 import { readSession, type UserSession } from "@/app/lib/session";
 
-type PayrunRow = {
-  id: string;
-  period: string;
-  payday: string;
-  netPayroll: number;
-  employees: number;
-  status: "draft" | "approved" | "completed" | "processing";
-  grossPay: number;
-  deductions: number;
-};
+type PayrunRow = Payrun;
 
 type DeductionItem = {
   name: string;
@@ -35,12 +26,6 @@ type EmployeePayroll = {
   netPay: number;
 };
 
-const samplePayruns: PayrunRow[] = [
-  { id: "PR-0426", period: "April 2026", payday: "Apr 30", netPayroll: 184200, grossPay: 220000, deductions: 35800, employees: 82, status: "approved" },
-  { id: "PR-0326", period: "March 2026", payday: "Mar 31", netPayroll: 178900, grossPay: 215000, deductions: 36100, employees: 79, status: "completed" },
-  { id: "PR-0226", period: "February 2026", payday: "Feb 26", netPayroll: 172500, grossPay: 208000, deductions: 35500, employees: 75, status: "completed" },
-];
-
 const defaultDeductions: DeductionItem[] = [
   { name: "PAYE (Income Tax)", type: "tax", rate: 30, amount: 0, applicable: true },
   { name: "NSSF", type: "statutory", rate: 6, amount: 0, applicable: true },
@@ -53,7 +38,7 @@ const defaultDeductions: DeductionItem[] = [
 export default function PayrunPage() {
   const [session, setSession] = useState<UserSession | null>(null);
   const router = useRouter();
-  const [payruns, setPayruns] = useState<PayrunRow[]>(samplePayruns);
+  const [payruns, setPayruns] = useState<PayrunRow[]>([]);
   const [employees, setEmployees] = useState<EmployeePayroll[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "create" | "history">("overview");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -94,6 +79,10 @@ export default function PayrunPage() {
         .catch(() => {
           setEmployees([]);
         });
+
+      api.listPayruns(current.orgId)
+        .then((data) => setPayruns(Array.isArray(data) ? data : []))
+        .catch(() => setPayruns([]));
     }
   }, [router]);
 
@@ -129,9 +118,7 @@ export default function PayrunPage() {
     setIsProcessing(true);
     setError("");
     setMessage("");
-
-    // Simulate processing
-    setTimeout(() => {
+    try {
       const selectedEmpls = employees.filter(e => selectedEmployees.includes(e.id));
       let totalGross = 0;
       let totalNet = 0;
@@ -144,8 +131,10 @@ export default function PayrunPage() {
         totalDeductions += empDeds;
       });
 
-      const newPayrun: PayrunRow = {
-        id: `PR-${Date.now().toString().slice(-4)}`,
+      if (!session?.orgId) return;
+
+      const newPayrun = await api.createPayrun({
+        orgId: session.orgId,
         period,
         payday: payDate,
         grossPay: totalGross,
@@ -153,19 +142,23 @@ export default function PayrunPage() {
         deductions: totalDeductions,
         employees: selectedEmpls.length,
         status: "draft",
-      };
+      });
 
-      setPayruns([newPayrun, ...payruns]);
+      setPayruns((prev) => [newPayrun, ...prev]);
       addNotification({
         title: "Payrun created",
-        detail: `${newPayrun.id} • ${newPayrun.period} • ${selectedEmpls.length} employees`,
+        detail: `${newPayrun.id} - ${newPayrun.period} - ${selectedEmpls.length} employees`,
         tag: "payrun",
         link: "/pages/Payrun",
       });
       setMessage(`Payroll created for ${period} with ${selectedEmpls.length} employees`);
-      setIsProcessing(false);
       setActiveTab("overview");
-    }, 2000);
+    } catch {
+      setError("Could not create payrun");
+    } finally {
+      setIsProcessing(false);
+    }
+
   };
 
   const toggleDeduction = (index: number) => {

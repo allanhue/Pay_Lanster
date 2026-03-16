@@ -13,6 +13,8 @@ func (a *App) employeesHandler(w http.ResponseWriter, r *http.Request) {
 		a.listEmployees(w, r)
 	case http.MethodPost:
 		a.createEmployee(w, r)
+	case http.MethodPut:
+		a.updateEmployee(w, r)
 	case http.MethodDelete:
 		a.deleteEmployee(w, r)
 	default:
@@ -33,6 +35,10 @@ func (a *App) listEmployees(w http.ResponseWriter, r *http.Request) {
          org_id,
          full_name,
          COALESCE(email, ''),
+         COALESCE(phone, ''),
+         COALESCE(title, ''),
+         COALESCE(position, ''),
+         COALESCE(designation, ''),
          COALESCE(department, ''),
          salary,
          COALESCE(pay_cycle, ''),
@@ -42,6 +48,7 @@ func (a *App) listEmployees(w http.ResponseWriter, r *http.Request) {
          COALESCE(nhif, ''),
          COALESCE(paye, ''),
          COALESCE(bank_name, ''),
+         COALESCE(bank_account_name, ''),
          COALESCE(bank_account, ''),
          COALESCE(contract_type, ''),
          COALESCE(location, ''),
@@ -65,6 +72,10 @@ func (a *App) listEmployees(w http.ResponseWriter, r *http.Request) {
 				&employee.OrgID,
 				&employee.FullName,
 				&employee.Email,
+				&employee.Phone,
+				&employee.Title,
+				&employee.Position,
+				&employee.Designation,
 				&employee.Department,
 				&employee.Salary,
 				&employee.PayCycle,
@@ -74,6 +85,7 @@ func (a *App) listEmployees(w http.ResponseWriter, r *http.Request) {
 				&employee.NHIF,
 				&employee.PAYE,
 				&employee.BankName,
+				&employee.BankAccountName,
 				&employee.BankAccount,
 				&employee.ContractType,
 				&employee.Location,
@@ -123,20 +135,39 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if a.db != nil {
-		req.ID = a.nextID("emp")
-		if _, err := a.db.Exec(
+		orgName := ""
+		_ = a.db.QueryRow(`SELECT name FROM organizations WHERE id = $1`, req.OrgID).Scan(&orgName)
+		prefix := prefixFromName(orgName)
+		if orgName == "" {
+			prefix = prefixFromName(req.OrgID)
+		}
+
+		var lastErr error
+		for i := 0; i < 5; i++ {
+			seq, err := randomDigits(6)
+			if err != nil {
+				lastErr = err
+				continue
+			}
+			req.ID = prefix + "-" + seq
+			if _, err := a.db.Exec(
 			`INSERT INTO employees (
-         id, org_id, full_name, email, department, salary, pay_cycle, status,
-         tax_id, nssf, nhif, paye, bank_name, bank_account, contract_type, location, hire_date
+         id, org_id, full_name, email, phone, title, position, designation, department, salary, pay_cycle, status,
+         tax_id, nssf, nhif, paye, bank_name, bank_account_name, bank_account, contract_type, location, hire_date
        )
        VALUES (
          $1, $2, $3, $4, $5, $6, $7, $8,
-         $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, '')
+         $9, $10, $11, $12, $13, $14, $15, $16,
+         $17, $18, $19, $20, NULLIF($21, '')
        )`,
 			req.ID,
 			req.OrgID,
 			req.FullName,
 			req.Email,
+			req.Phone,
+			req.Title,
+			req.Position,
+			req.Designation,
 			req.Department,
 			req.Salary,
 			req.PayCycle,
@@ -146,29 +177,138 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 			req.NHIF,
 			req.PAYE,
 			req.BankName,
+			req.BankAccountName,
 			req.BankAccount,
 			req.ContractType,
 			req.Location,
 			req.HireDate,
-		); err != nil {
-			if err == sql.ErrNoRows {
-				writeError(w, http.StatusBadRequest, "organization not found")
-				return
+			); err != nil {
+				lastErr = err
+				if strings.Contains(err.Error(), "duplicate key") {
+					continue
+				}
+				break
 			}
-			writeError(w, http.StatusInternalServerError, "could not save employee")
+
+			writeJSON(w, http.StatusCreated, req)
 			return
 		}
 
-		writeJSON(w, http.StatusCreated, req)
+		if lastErr == sql.ErrNoRows {
+			writeError(w, http.StatusBadRequest, "organization not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "could not save employee")
 		return
 	}
 
 	a.mu.Lock()
-	req.ID = a.nextID("emp")
+	prefix := prefixFromName(req.OrgID)
+	if name, ok := a.orgNames[req.OrgID]; ok {
+		prefix = prefixFromName(name)
+	}
+	if seq, err := randomDigits(6); err == nil {
+		req.ID = prefix + "-" + seq
+	} else {
+		req.ID = a.nextID("emp")
+	}
 	a.employees[req.OrgID] = append(a.employees[req.OrgID], req)
 	a.mu.Unlock()
 
 	writeJSON(w, http.StatusCreated, req)
+}
+
+func (a *App) updateEmployee(w http.ResponseWriter, r *http.Request) {
+	var req Employee
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	req.OrgID = strings.TrimSpace(req.OrgID)
+	req.ID = strings.TrimSpace(req.ID)
+	if req.OrgID == "" || req.ID == "" {
+		writeError(w, http.StatusBadRequest, "orgId and id are required")
+		return
+	}
+
+	if a.db != nil {
+		res, err := a.db.Exec(
+			`UPDATE employees
+       SET full_name = $1,
+           email = $2,
+           phone = $3,
+           title = $4,
+           position = $5,
+           designation = $6,
+           department = $7,
+           salary = $8,
+           pay_cycle = $9,
+           status = $10,
+           tax_id = $11,
+           nssf = $12,
+           nhif = $13,
+           paye = $14,
+           bank_name = $15,
+           bank_account_name = $16,
+           bank_account = $17,
+           contract_type = $18,
+           location = $19,
+           hire_date = NULLIF($20, '')
+       WHERE id = $21 AND org_id = $22`,
+			req.FullName,
+			req.Email,
+			req.Phone,
+			req.Title,
+			req.Position,
+			req.Designation,
+			req.Department,
+			req.Salary,
+			req.PayCycle,
+			req.Status,
+			req.TaxID,
+			req.NSSF,
+			req.NHIF,
+			req.PAYE,
+			req.BankName,
+			req.BankAccountName,
+			req.BankAccount,
+			req.ContractType,
+			req.Location,
+			req.HireDate,
+			req.ID,
+			req.OrgID,
+		)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "could not update employee")
+			return
+		}
+		if rows, _ := res.RowsAffected(); rows == 0 {
+			writeError(w, http.StatusNotFound, "employee not found")
+			return
+		}
+
+		writeJSON(w, http.StatusOK, req)
+		return
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	list := a.employees[req.OrgID]
+	found := false
+	for i := range list {
+		if list[i].ID == req.ID {
+			list[i] = req
+			found = true
+			break
+		}
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "employee not found")
+		return
+	}
+	a.employees[req.OrgID] = list
+	writeJSON(w, http.StatusOK, req)
 }
 
 func (a *App) deleteEmployee(w http.ResponseWriter, r *http.Request) {

@@ -122,23 +122,9 @@ export default function ApprovalsPage() {
         <article className="panel panel-elevated">
           <div className="panel-header">
             <div>
-              <h2>Review Items</h2>
-              <p>Filter by type, status, or reference.</p>
             </div>
-            <div className="panel-meta">
-              <span className="status-pill">
-                {autoRefresh ? "Live refresh" : "Manual refresh"}
-              </span>
-              <span className="meta-text">Last sync: {lastSync || "—"}</span>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => session?.orgId && refreshApprovals(session.orgId)}
-                disabled={isSyncing}
-              >
-                {isSyncing ? "Syncing..." : "Sync now"}
-              </button>
-            </div>
+
+         
           </div>
           <div className="filter-row">
             <div className="form-group">

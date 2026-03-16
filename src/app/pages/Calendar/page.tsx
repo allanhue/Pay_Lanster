@@ -183,25 +183,7 @@ export default function OrgCalendarPage() {
       <section className="content content-wide">
         <div className="page-header">
           <h1>Calendar</h1>
-          <p>Manage your organization's payroll schedule, holidays, and important dates</p>
-        </div>
-
-        <div className="cards-grid three-col">
-          <article className="card card-metric">
-            <span className="metric-label">Total Events</span>
-            <span className="metric-value">{summary.total}</span>
-            <span className="metric-sublabel">Scheduled items</span>
-          </article>
-          <article className="card card-metric">
-            <span className="metric-label">Payroll Items</span>
-            <span className="metric-value">{summary.payroll}</span>
-            <span className="metric-sublabel">Runs and cycles</span>
-          </article>
-          <article className="card card-metric">
-            <span className="metric-label">Deadlines</span>
-            <span className="metric-value">{summary.deadlines}</span>
-            <span className="metric-sublabel">Compliance dates</span>
-          </article>
+          <p>Manage your organization's payroll schedule, holidays and important dates</p>
         </div>
 
         {/* Calendar Controls */}

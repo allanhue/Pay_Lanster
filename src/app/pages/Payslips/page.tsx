@@ -3,20 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
-import { api } from "@/app/lib/api";
-import { addNotification } from "@/app/lib/notifications";
+import { api, type Payslip } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
-
-type Payslip = {
-  id: string;
-  employee: string;
-  email: string;
-  period: string;
-  gross: number;
-  deductions: number;
-  net: number;
-  approval: "pending" | "approved" | "rejected";
-};
 
 export default function PayslipsPage() {
   const [session, setSession] = useState<UserSession | null>(null);
@@ -25,7 +13,6 @@ export default function PayslipsPage() {
   const [emailStatus, setEmailStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | Payslip["approval"]>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkStatus, setBulkStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [bulkSending, setBulkSending] = useState(false);
@@ -42,11 +29,13 @@ export default function PayslipsPage() {
       return;
     }
     setSession(current);
-    api.getDemoData().then((data) => {
-      setPayslips(Array.isArray(data.payslips) ? (data.payslips as Payslip[]) : []);
-    }).catch(() => {
+    if (current.orgId) {
+      api.listPayslips(current.orgId)
+        .then((data) => setPayslips(Array.isArray(data) ? data : []))
+        .catch(() => setPayslips([]));
+    } else {
       setPayslips([]);
-    });
+    }
   }, [router]);
 
   useEffect(() => {
@@ -58,23 +47,22 @@ export default function PayslipsPage() {
   }, []);
 
   const summary = useMemo(() => {
-    const pending = payslips.filter((slip) => slip.approval === "pending").length;
-    const approved = payslips.filter((slip) => slip.approval === "approved").length;
-    const rejected = payslips.filter((slip) => slip.approval === "rejected").length;
-    return { pending, approved, rejected };
+    const total = payslips.length;
+    const uniquePeriods = new Set(payslips.map((slip) => slip.period)).size;
+    const recipients = new Set(payslips.map((slip) => slip.email)).size;
+    return { total, uniquePeriods, recipients };
   }, [payslips]);
 
   const filteredPayslips = useMemo(() => {
     return payslips.filter((slip) => {
-      const matchesStatus = statusFilter === "all" || slip.approval === statusFilter;
       const matchesSearch =
         searchQuery === "" ||
         slip.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
         slip.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         slip.id.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesStatus && matchesSearch;
+      return matchesSearch && slip.approval === "approved";
     });
-  }, [payslips, searchQuery, statusFilter]);
+  }, [payslips, searchQuery]);
 
   const toggleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -84,38 +72,9 @@ export default function PayslipsPage() {
     }
   };
 
-  const bulkApprove = () => {
-    setPayslips((prev) =>
-      prev.map((item) => (selectedIds.includes(item.id) ? { ...item, approval: "approved" } : item))
-    );
-    if (selectedIds.length > 0) {
-      addNotification({
-        title: "Payslips approved",
-        detail: `${selectedIds.length} payslips approved`,
-        tag: "payslip",
-        link: "/pages/Payslips",
-      });
-    }
-  };
-
   const removePayslip = (id: string) => {
     setPayslips((prev) => prev.filter((item) => item.id !== id));
     setSelectedIds((prev) => prev.filter((selected) => selected !== id));
-  };
-
-  const setStatus = (id: string, approval: Payslip["approval"]) => {
-    setPayslips((prev) => {
-      const target = prev.find((item) => item.id === id);
-      if (target) {
-        addNotification({
-          title: `Payslip ${approval}`,
-          detail: `${target.employee} • ${target.period} (${target.id})`,
-          tag: "payslip",
-          link: "/pages/Payslips",
-        });
-      }
-      return prev.map((item) => (item.id === id ? { ...item, approval } : item));
-    });
   };
 
   const money = (value: number) =>
@@ -187,12 +146,6 @@ export default function PayslipsPage() {
         html: buildPayslipEmailHTML(preview),
       });
       setEmailStatus({ ok: true, message: res.message || "Email sent" });
-      addNotification({
-        title: "Payslip emailed",
-        detail: `Sent to ${preview.email} • ${preview.period}`,
-        tag: "payslip",
-        link: "/pages/Payslips",
-      });
     } catch (err) {
       setEmailStatus({ ok: false, message: err instanceof Error ? err.message : "Failed to send email" });
     } finally {
@@ -201,9 +154,9 @@ export default function PayslipsPage() {
   };
 
   const onBulkEmail = async () => {
-    const recipients = payslips.filter((item) => selectedIds.includes(item.id) && item.approval === "approved");
+    const recipients = payslips.filter((item) => selectedIds.includes(item.id));
     if (recipients.length === 0) {
-      setBulkStatus({ ok: false, message: "Select approved payslips to email." });
+      setBulkStatus({ ok: false, message: "Select payslips to email." });
       return;
     }
 
@@ -218,12 +171,6 @@ export default function PayslipsPage() {
         });
       }
       setBulkStatus({ ok: true, message: `Sent ${recipients.length} payslips.` });
-      addNotification({
-        title: "Payslips emailed",
-        detail: `Sent ${recipients.length} approved payslips`,
-        tag: "payslip",
-        link: "/pages/Payslips",
-      });
     } catch (err) {
       setBulkStatus({ ok: false, message: err instanceof Error ? err.message : "Failed to send emails" });
     } finally {
@@ -239,42 +186,28 @@ export default function PayslipsPage() {
       <section className="content content-wide">
         <div className="page-header">
           <h1>Payslips</h1>
-          <p>Review, approve, print (PDF), and email payslips.</p>
+          <p>Review, print (PDF), and email approved payslips. Payslips appear after payruns are approved.</p>
         </div>
 
         <div className="cards-grid three-col">
           <article className="card card-metric">
-            <span className="metric-label">Pending</span>
-            <span className="metric-value">{summary.pending}</span>
-            <span className="metric-sublabel">Awaiting review</span>
+            <span className="metric-label">Total Payslips</span>
+            <span className="metric-value">{summary.total}</span>
+            <span className="metric-sublabel">Approved only</span>
           </article>
           <article className="card card-metric">
-            <span className="metric-label">Approved</span>
-            <span className="metric-value">{summary.approved}</span>
-            <span className="metric-sublabel">Ready to send</span>
+            <span className="metric-label">Pay Periods</span>
+            <span className="metric-value">{summary.uniquePeriods}</span>
+            <span className="metric-sublabel">Unique periods</span>
           </article>
           <article className="card card-metric">
-            <span className="metric-label">Rejected</span>
-            <span className="metric-value">{summary.rejected}</span>
-            <span className="metric-sublabel">Needs updates</span>
+            <span className="metric-label">Recipients</span>
+            <span className="metric-value">{summary.recipients}</span>
+            <span className="metric-sublabel">Unique emails</span>
           </article>
         </div>
 
         <article className="panel panel-elevated">
-          <div className="panel-header">
-            <div>
-              <h2>Payroll Payslips</h2>
-              <p>Filter, approve, and email payslips in bulk.</p>
-            </div>
-            <div className="panel-meta">
-              <button className="btn btn-secondary btn-sm" type="button" onClick={bulkApprove} disabled={selectedIds.length === 0}>
-                Approve selected
-              </button>
-              <button className="btn btn-primary btn-sm" type="button" onClick={onBulkEmail} disabled={bulkSending || selectedIds.length === 0}>
-                {bulkSending ? "Sending..." : "Email selected"}
-              </button>
-            </div>
-          </div>
           <div className="filter-row">
             <div className="form-group">
               <label htmlFor="payslipSearch">Search</label>
@@ -284,15 +217,6 @@ export default function PayslipsPage() {
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search by employee, email, or slip ID"
               />
-            </div>
-            <div className="form-group">
-              <label htmlFor="payslipStatus">Status</label>
-              <select id="payslipStatus" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}>
-                <option value="all">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
             </div>
             {bulkStatus && (
               <div className={`status-pill ${bulkStatus.ok ? "status-pill-success" : "status-pill-error"}`}>
@@ -316,7 +240,6 @@ export default function PayslipsPage() {
                 <th>Gross</th>
                 <th>Deductions</th>
                 <th>Net</th>
-                <th>Approval</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -348,18 +271,9 @@ export default function PayslipsPage() {
                   <td>${money(item.deductions)}</td>
                   <td><strong>${money(item.net)}</strong></td>
                   <td>
-                    <span className={`status-badge status-${item.approval}`}>{item.approval}</span>
-                  </td>
-                  <td>
                     <div className="inline-actions">
                       <button className="secondary" type="button" onClick={() => { setPreview(item); setEmailStatus(null); }}>
                         View / Print
-                      </button>
-                      <button className="secondary" type="button" onClick={() => setStatus(item.id, "approved")}> 
-                        Approve
-                      </button>
-                      <button className="danger" type="button" onClick={() => setStatus(item.id, "rejected")}>
-                        Reject
                       </button>
                       <button className="danger" type="button" onClick={() => removePayslip(item.id)}>
                         Delete
