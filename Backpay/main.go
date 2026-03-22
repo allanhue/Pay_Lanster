@@ -56,10 +56,18 @@ func main() {
 	mux := http.NewServeMux()
 	app.Register(mux)
 
-	if err := http.ListenAndServe(":8080", WithLogging(WithCORS(mux))); err != nil {
+	// Get port from environment or default to 8080 for local dev
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Server starting on port %s", port)
+	if err := http.ListenAndServe(":"+port, WithLogging(WithCORS(mux))); err != nil {
 		log.Fatal(err)
 	}
 }
+
 
 func WithCORS(next http.Handler) http.Handler {
 	allowedOrigins := parseAllowedOrigins(os.Getenv("CORS_ALLOWED_ORIGINS"))
