@@ -76,6 +76,13 @@ const moduleIcons = {
       <circle cx="15" cy="15" r="1" fill="currentColor" />
     </svg>
   ),
+  support: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 12a4 4 0 018 0v3a1.5 1.5 0 01-3 0v-2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="18" r="1" fill="currentColor" />
+    </svg>
+  ),
   payments: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
