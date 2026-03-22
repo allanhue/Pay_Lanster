@@ -71,16 +71,16 @@ const moduleIcons = {
   ),
   integrations: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M8 12h8M12 8v8M4 4h16v16H4z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="9" cy="9" r="1" fill="currentColor" />
-      <circle cx="15" cy="15" r="1" fill="currentColor" />
+      <path d="M7 7h4v4H7zM13 13h4v4h-4z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M11 9h2m-6 2h2m4 2h2m-2-6h2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M4 12h2m12 0h2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ),
   support: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M8 12a4 4 0 018 0v3a1.5 1.5 0 01-3 0v-2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="12" cy="18" r="1" fill="currentColor" />
+      <path d="M4 12a8 8 0 0116 0v4a2 2 0 01-2 2h-3v-4a2 2 0 012-2h1" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 12v4a2 2 0 002 2h3v-4a2 2 0 00-2-2H6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 20h6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   ),
   payments: (
@@ -103,7 +103,10 @@ const moduleIcons = {
   ),
   advanced: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 2v6m0 0l-4 4m4-4l4 4m-4 4v6m0 0l-4-4m4 4l4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="9" cy="6" r="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="15" cy="12" r="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   ),
 };
@@ -117,18 +120,19 @@ export default function Sidebar({ session }: SidebarProps) {
 
   const orgLinks = [
     { href: "/pages/Dashboard", label: "Dashboard", icon: moduleIcons.dashboard },
-    { href: "/pages/Payrun", label: "Payrun", icon: moduleIcons.payrun },
     { href: "/pages/Employee", label: "Employees", icon: moduleIcons.employees },
+    { href: "/pages/Payrun", label: "Payrun", icon: moduleIcons.payrun },
     { href: "/pages/Loans", label: "Loans", icon: moduleIcons.loans },
     { href: "/pages/Benefits_and_Allowances", label: "Benefits & Allowances", icon: moduleIcons.benefits },
     { href: "/pages/Approvals", label: "Approvals", icon: moduleIcons.approvals },
     { href: "/pages/Payslips", label: "Payslips", icon: moduleIcons.payslips },
     { href: "/pages/Reports", label: "Reports", icon: moduleIcons.reports },
-    { href: "/pages/Integrations", label: "Integrations", icon: moduleIcons.integrations },
     { href: "/pages/Support", label: "Support", icon: moduleIcons.support },
     { href: "/pages/Calendar", label: "Calendar", icon: moduleIcons.calendar },
     { href: "/pages/Settings", label: "Payroll Setup", icon: moduleIcons.settings },
     { href: "/pages/Advanced_Settings", label: "Advanced Settings", icon: moduleIcons.advanced },
+    { href: "/pages/Integrations", label: "Connections", icon: moduleIcons.integrations },
+
   ];
 
   const systemLinks = [

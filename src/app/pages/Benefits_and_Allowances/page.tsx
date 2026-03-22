@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api, type Benefit } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
@@ -86,8 +87,11 @@ export default function BenefitsAndAllowancesPage() {
       <Navbar session={session} />
       <section className="content content-wide">
         <div className="page-header">
-          <h1>Benefits & Allowances</h1>
-          <p>Define recurring perks and one-off allowances for your team.</p>
+          <div className="page-header-content">
+            <h1>Benefits & Allowances</h1>
+            <p>Define recurring perks and one-off allowances for your team.</p>
+          </div>
+          <ModuleActions />
         </div>
 
         <div className="benefit-summary">
@@ -229,9 +233,9 @@ export default function BenefitsAndAllowancesPage() {
                         aria-label="Benefit actions"
                       >
                         <svg viewBox="0 0 24 24">
-                          <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="5" r="1.6" fill="currentColor" />
                           <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                          <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="19" r="1.6" fill="currentColor" />
                         </svg>
                       </button>
                       {activeMenu === benefit.id && (

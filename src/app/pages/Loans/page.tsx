@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
-import { api, type Loan } from "@/app/lib/api";
+import ModuleActions from "@/app/components/ModuleActions";
+import { api, type Loan, type PayrollEmployee } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 type LoanRecord = Loan;
@@ -21,6 +22,7 @@ export default function LoansPage() {
   const [loanPurpose, setLoanPurpose] = useState("");
   const [loanTenure, setLoanTenure] = useState("");
   const [loanRate, setLoanRate] = useState("");
+  const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,7 +39,16 @@ export default function LoansPage() {
     api.listLoans(current.orgId)
       .then((data) => setLoans(Array.isArray(data) ? data : []))
       .catch(() => setLoans([]));
+    api.listEmployees(current.orgId)
+      .then((data) => setEmployees(Array.isArray(data) ? data : []))
+      .catch(() => setEmployees([]));
   }, [router]);
+
+  const employeeSuggestions = useMemo(() => {
+    const query = loanEmployee.trim().toLowerCase();
+    const matches = employees.filter((emp) => emp.fullName.toLowerCase().includes(query));
+    return (query ? matches : employees).slice(0, 8);
+  }, [employees, loanEmployee]);
 
   const settleLoan = async (id: string) => {
     if (!session?.orgId) return;
@@ -164,13 +175,16 @@ export default function LoansPage() {
       <section className="content content-wide">
         <div className="page-header-row">
           <div className="page-header">
-            <h1>Employee Loans</h1>
-            <p>Track employer-assisted loans alongside payroll runs.</p>
+            <div className="page-header-content">
+              <h1>Employee Loans</h1>
+              <p>Track employer-assisted loans alongside payroll runs.</p>
+            </div>
           </div>
           <div className="page-header-actions">
             <button className="btn btn-primary btn-sm" type="button" onClick={openNewLoanForm}>
               Add Loan
             </button>
+            <ModuleActions />
           </div>
         </div>
 
@@ -227,9 +241,9 @@ export default function LoansPage() {
                         aria-label="Loan actions"
                       >
                         <svg viewBox="0 0 24 24">
-                          <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="5" r="1.6" fill="currentColor" />
                           <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                          <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="19" r="1.6" fill="currentColor" />
                         </svg>
                       </button>
                       {selectedLoan?.id === loan.id && (
@@ -278,8 +292,14 @@ export default function LoansPage() {
                       value={loanEmployee}
                       onChange={(event) => setLoanEmployee(event.target.value)}
                       placeholder="Employee name"
+                      list="loanEmployeeList"
                       required
                     />
+                    <datalist id="loanEmployeeList">
+                      {employeeSuggestions.map((employee) => (
+                        <option key={employee.id} value={employee.fullName} />
+                      ))}
+                    </datalist>
                   </div>
                   <div className="form-group">
                     <label htmlFor="loanAmount">Loan Amount</label>

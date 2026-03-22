@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { addNotification } from "@/app/lib/notifications";
 import { api, type ApprovalItem } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
@@ -58,7 +59,11 @@ export default function ApprovalsPage() {
       return;
     }
     setSession(current);
-    void refreshApprovals(current.orgId);
+    if (current.orgId) {
+      void refreshApprovals(current.orgId);
+    } else {
+      setApprovals([]);
+    }
   }, [router]);
 
   useEffect(() => {
@@ -97,8 +102,11 @@ export default function ApprovalsPage() {
       <Navbar session={session} />
       <section className="content content-wide">
         <div className="page-header">
-          <h1>Approval Queue</h1>
-          <p>Approve payruns and payslips before payroll release.</p>
+          <div className="page-header-content">
+            <h1>Approval Queue</h1>
+            <p>Approve payruns and payslips before payroll release.</p>
+          </div>
+          <ModuleActions />
         </div>
 
         <div className="cards-grid three-col">

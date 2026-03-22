@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 export default function ProfilePage() {
@@ -41,8 +42,11 @@ export default function ProfilePage() {
       <Navbar session={session} />
       <section className="content content-wide">
         <div className="page-header">
-          <h1>Profile</h1>
-          <p>Review your admin identity and contact details.</p>
+          <div className="page-header-content">
+            <h1>Profile</h1>
+            <p>Review your admin identity and contact details.</p>
+          </div>
+          <ModuleActions />
         </div>
 
         <div className="profile-grid">
@@ -57,7 +61,7 @@ export default function ProfilePage() {
             </div>
           </article>
 
-          <article className="panel panel-elevated">
+          <article className="panel panel-elevated profile-edit-panel">
             <div className="panel-header">
               <h2>Account Details</h2>
               <p>Keep your account information up to date.</p>
@@ -84,7 +88,7 @@ export default function ProfilePage() {
             </div>
           </article>
 
-          <article className="panel panel-elevated">
+          <article className="panel panel-elevated profile-edit-panel">
             <div className="panel-header">
               <h2>Edit Profile</h2>
               <p>Manage your contact details and notifications.</p>
@@ -124,14 +128,14 @@ export default function ProfilePage() {
                   <option value="Africa/Nairobi">Africa/Nairobi</option>
                   <option value="UTC">UTC</option>
                   <option value="Europe/London">Europe/London</option>
-                  <option value="America/New_York">America/New_York</option>
+                  <option value="America/New_York">America/New York</option>
                 </select>
               </div>
               <div className="form-group">
                 <label htmlFor="profileSignature">Email Signature</label>
                 <textarea
                   id="profileSignature"
-                  rows={4}
+                  rows={3}
                   value={signature}
                   onChange={(e) => setSignature(e.target.value)}
                 />

@@ -3,15 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
-import { api, type Payslip } from "@/app/lib/api";
+import ModuleActions from "@/app/components/ModuleActions";
+import { api, type Payrun, type Payslip } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 export default function PayslipsPage() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [payslips, setPayslips] = useState<Payslip[]>([]);
+  const [payruns, setPayruns] = useState<Payrun[]>([]);
   const [selectedPayslip, setSelectedPayslip] = useState<Payslip | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPayrun, setSelectedPayrun] = useState("latest");
   const [emailStatus, setEmailStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const router = useRouter();
@@ -31,10 +34,31 @@ export default function PayslipsPage() {
       api.listPayslips(current.orgId)
         .then((data) => setPayslips(Array.isArray(data) ? data : []))
         .catch(() => setPayslips([]));
+      api.listPayruns(current.orgId)
+        .then((data) => setPayruns(Array.isArray(data) ? data : []))
+        .catch(() => setPayruns([]));
     } else {
       setPayslips([]);
+      setPayruns([]);
     }
   }, [router]);
+
+  const payrunPeriods = useMemo(() => {
+    const fromPayruns = payruns.map((payrun) => payrun.period).filter(Boolean);
+    const raw = fromPayruns.length > 0 ? fromPayruns : payslips.map((slip) => slip.period);
+    return Array.from(new Set(raw));
+  }, [payruns, payslips]);
+
+  const latestPeriod = useMemo(() => {
+    if (payruns.length > 0) {
+      const sorted = [...payruns].sort(
+        (a, b) => new Date(b.payday).getTime() - new Date(a.payday).getTime()
+      );
+      return sorted[0]?.period ?? "";
+    }
+    const unique = Array.from(new Set(payslips.map((slip) => slip.period))).sort();
+    return unique.length > 0 ? unique[unique.length - 1] : "";
+  }, [payruns, payslips]);
 
   useEffect(() => {
     const onAfterPrint = () => {
@@ -58,9 +82,15 @@ export default function PayslipsPage() {
         slip.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
         slip.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         slip.id.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSearch && slip.approval === "approved";
+      const matchesPeriod =
+        selectedPayrun === "all"
+          ? true
+          : selectedPayrun === "latest"
+            ? latestPeriod === "" || slip.period === latestPeriod
+            : slip.period === selectedPayrun;
+      return matchesSearch && matchesPeriod && slip.approval === "approved";
     });
-  }, [payslips, searchQuery]);
+  }, [payslips, searchQuery, selectedPayrun, latestPeriod]);
 
   const removePayslip = (id: string) => {
     setPayslips((prev) => prev.filter((item) => item.id !== id));
@@ -151,8 +181,11 @@ export default function PayslipsPage() {
       <section className="content content-wide payslip-layout">
         <div className="payslip-list">
           <div className="page-header">
-            <h1>Payslips</h1>
-            <p>Review, print (PDF), and email approved payslips. Payslips appear after payruns are approved.</p>
+            <div className="page-header-content">
+              <h1>Payslips</h1>
+              <p>Review, print (PDF), and email approved payslips. Payslips appear after payruns are approved.</p>
+            </div>
+            <ModuleActions />
           </div>
 
           <div className="cards-grid three-col">
@@ -183,6 +216,22 @@ export default function PayslipsPage() {
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search by employee, email, or slip ID"
                 />
+              </div>
+              <div className="form-group">
+                <label htmlFor="payslipPeriod">Payrun Period</label>
+                <select
+                  id="payslipPeriod"
+                  value={selectedPayrun}
+                  onChange={(event) => setSelectedPayrun(event.target.value)}
+                >
+                  <option value="latest">Latest payrun</option>
+                  <option value="all">All periods</option>
+                  {payrunPeriods.map((period) => (
+                    <option key={period} value={period}>
+                      {period}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <table className="data-table">
@@ -219,9 +268,9 @@ export default function PayslipsPage() {
                         aria-label="Payslip actions"
                       >
                         <svg viewBox="0 0 24 24">
-                          <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="5" r="1.6" fill="currentColor" />
                           <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                          <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="19" r="1.6" fill="currentColor" />
                         </svg>
                       </button>
                       {menuOpen === item.id && (

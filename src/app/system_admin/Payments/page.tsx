@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 interface Payment {
@@ -287,8 +288,11 @@ export default function PaymentsPage() {
       <Navbar session={session} />
       <section className="content content-wide">
         <div className="page-header">
-          <h1>Payments</h1>
-          <p>Manage and track all payment transactions across organizations</p>
+          <div className="page-header-content">
+            <h1>Payments</h1>
+            <p>Manage and track all payment transactions across organizations</p>
+          </div>
+          <ModuleActions />
         </div>
 
         {/* Enhanced Statistics Cards */}
@@ -574,17 +578,19 @@ export default function PaymentsPage() {
                   <tr>
                     {showBulkActions && (
                       <th className="checkbox-column">
-                        <input
-                          type="checkbox"
-                          checked={selectedPayments.length === filteredPayments.length}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedPayments(filteredPayments.map(p => p.id));
-                            } else {
+                        <button
+                          type="button"
+                          className="selection-toggle"
+                          onClick={() => {
+                            if (selectedPayments.length === filteredPayments.length) {
                               setSelectedPayments([]);
+                            } else {
+                              setSelectedPayments(filteredPayments.map(p => p.id));
                             }
                           }}
-                        />
+                        >
+                          {selectedPayments.length === filteredPayments.length ? "Clear all" : "Select all"}
+                        </button>
                       </th>
                     )}
                     <th>Payment ID</th>
@@ -604,11 +610,13 @@ export default function PaymentsPage() {
                     <tr key={payment.id} className={selectedPayments.includes(payment.id) ? 'selected' : ''}>
                       {showBulkActions && (
                         <td>
-                          <input
-                            type="checkbox"
-                            checked={selectedPayments.includes(payment.id)}
-                            onChange={() => togglePaymentSelection(payment.id)}
-                          />
+                          <button
+                            type="button"
+                            className={`selection-toggle ${selectedPayments.includes(payment.id) ? "is-selected" : ""}`}
+                            onClick={() => togglePaymentSelection(payment.id)}
+                          >
+                            {selectedPayments.includes(payment.id) ? "Selected" : "Select"}
+                          </button>
                         </td>
                       )}
                       <td>

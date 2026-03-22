@@ -218,6 +218,16 @@ func sendEmail(to []string, subject, bodyHTML string) error {
 	return smtp.SendMail(addr, auth, cfg.From, to, msg)
 }
 
+func isMailConfigError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "MAIL_PASSWORD/BREVO_API_KEY not configured") ||
+		strings.Contains(msg, "MAIL_FROM not configured") ||
+		strings.Contains(msg, "missing recipients")
+}
+
 type brevoEmailRequest struct {
 	Sender      brevoSender      `json:"sender"`
 	To          []brevoRecipient `json:"to"`
@@ -400,6 +410,13 @@ func (a *App) supportForm(w http.ResponseWriter, r *http.Request) {
   `, req.Name, req.Email, req.Subject, strings.ReplaceAll(req.Message, "\n", "<br>"))
 
 	if err := sendEmail([]string{supportTo}, emailSubject, htmlBody); err != nil {
+		if isMailConfigError(err) {
+			writeJSON(w, http.StatusOK, map[string]any{
+				"sent":    false,
+				"message": "Support request recorded. Email service is not configured.",
+			})
+			return
+		}
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to send support email: %v", err))
 		return
 	}

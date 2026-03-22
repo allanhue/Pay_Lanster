@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api, type Payrun } from "@/app/lib/api";
 import { addNotification } from "@/app/lib/notifications";
 import { readSession, type UserSession } from "@/app/lib/session";
@@ -206,8 +207,11 @@ export default function PayrunPage() {
       <Navbar session={session} />
       <section className="content">
         <div className="page-header">
-          <h1>Payroll Center</h1>
-          <p>Manage payroll runs, process payments, and review payrun history.</p>
+          <div className="page-header-content">
+            <h1>Payroll Center</h1>
+            <p>Manage payroll runs, process payments, and review payrun history.</p>
+          </div>
+          <ModuleActions />
         </div>
 
         {message && <div className="alert alert-success">{message}</div>}
@@ -319,7 +323,7 @@ export default function PayrunPage() {
 
         {/* Create Payroll Tab */}
         {activeTab === "create" && (
-          <form onSubmit={handleRunPayroll}>
+          <form onSubmit={handleRunPayroll} className="payrun-form">
             <div className="panel panel-elevated">
               <div className="panel-header">
                 <h2>Payroll Details</h2>
@@ -362,9 +366,9 @@ export default function PayrunPage() {
                     aria-label="Employee selection actions"
                   >
                     <svg viewBox="0 0 24 24">
-                      <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                      <circle cx="12" cy="5" r="1.6" fill="currentColor" />
                       <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                      <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                      <circle cx="12" cy="19" r="1.6" fill="currentColor" />
                     </svg>
                   </button>
                   {openEmployeeBulkMenu && (
@@ -435,9 +439,9 @@ export default function PayrunPage() {
                               aria-label="Employee selection"
                             >
                               <svg viewBox="0 0 24 24">
-                                <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                                <circle cx="12" cy="5" r="1.6" fill="currentColor" />
                                 <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                                <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                                <circle cx="12" cy="19" r="1.6" fill="currentColor" />
                               </svg>
                             </button>
                             {openEmployeeMenu === emp.id && (
@@ -587,9 +591,9 @@ export default function PayrunPage() {
                           aria-label="Payrun actions"
                         >
                           <svg viewBox="0 0 24 24">
-                            <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                            <circle cx="12" cy="5" r="1.6" fill="currentColor" />
                             <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                            <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                            <circle cx="12" cy="19" r="1.6" fill="currentColor" />
                           </svg>
                         </button>
                         {openPayrunMenu === row.id && (

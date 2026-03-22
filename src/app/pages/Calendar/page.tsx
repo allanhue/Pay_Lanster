@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
@@ -251,8 +252,11 @@ export default function OrgCalendarPage() {
       <Navbar session={session} />
       <section className="content content-wide">
         <div className="page-header">
-          <h1>Calendar</h1>
-          <p>Manage your organization's payroll schedule, holidays and important dates</p>
+          <div className="page-header-content">
+            <h1>Calendar</h1>
+            <p>Manage your organization's payroll schedule, holidays and important dates</p>
+          </div>
+          <ModuleActions />
         </div>
 
         {/* Calendar Controls */}

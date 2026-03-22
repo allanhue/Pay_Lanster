@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 interface Organization {
@@ -315,8 +316,11 @@ export default function ConfigurationPage() {
       <Navbar session={session} />
       <section className="content">
         <div className="page-header">
-          <h1>Configuration</h1>
-          <p>Manage organizations, system settings, and platform configuration</p>
+          <div className="page-header-content">
+            <h1>Configuration</h1>
+            <p>Manage organizations, system settings, and platform configuration</p>
+          </div>
+          <ModuleActions />
         </div>
 
         {message && <div className="alert alert-success">{message}</div>}

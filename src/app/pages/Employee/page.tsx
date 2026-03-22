@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api, type PayrollEmployee } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
@@ -301,8 +302,11 @@ export default function EmployeePage() {
       <section className="content content-wide">
         <div className="page-header-row">
           <div className="page-header">
-            <h1>Employees</h1>
-            <p>Manage your team and payroll information</p>
+            <div className="page-header-content">
+              <h1>Employees</h1>
+              <p>Manage your team and payroll information</p>
+            </div>
+            <ModuleActions />
           </div>
           <div className="page-header-meta">
             <span className="stat-chip">Active: {activeEmployees}</span>
@@ -565,9 +569,9 @@ export default function EmployeePage() {
                           }}
                         >
                           <svg viewBox="0 0 24 24">
-                            <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+                            <circle cx="12" cy="5" r="1.6" fill="currentColor" />
                             <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                            <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+                            <circle cx="12" cy="19" r="1.6" fill="currentColor" />
                           </svg>
                         </button>
                       </td>

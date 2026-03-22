@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 interface CalendarEvent {
@@ -236,8 +237,11 @@ export default function CalendarPage() {
       <Navbar session={session} />
       <section className="content">
         <div className="page-header">
-          <h1>Calendar</h1>
-          <p>Manage payroll schedules, holidays, and important dates</p>
+          <div className="page-header-content">
+            <h1>Calendar</h1>
+            <p>Manage payroll schedules, holidays, and important dates</p>
+          </div>
+          <ModuleActions />
         </div>
 
         {/* Calendar Controls */}
@@ -336,99 +340,101 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Today's Events */}
-          <div className="panel panel-elevated">
-            <div className="panel-header">
-              <h3>Today's Events</h3>
-              <span className="event-count">{todayEvents.length}</span>
-            </div>
-            {todayEvents.length === 0 ? (
-              <div className="empty-state">
-                <p>No events scheduled for today</p>
+          <div className="calendar-side calendar-side-grid">
+            {/* Today's Events */}
+            <div className="panel panel-elevated">
+              <div className="panel-header">
+                <h3>Today's Events</h3>
+                <span className="event-count">{todayEvents.length}</span>
               </div>
-            ) : (
-              <div className="events-list">
-                {todayEvents.map(event => (
-                  <div key={event.id} className="event-item">
-                    <div className="event-icon">
-                      {getEventIcon(event.type)}
-                    </div>
-                    <div className="event-content">
-                      <h4>{event.title}</h4>
-                      <p>{event.description}</p>
-                      <div className="event-meta">
-                        <span className="event-time">{event.time}</span>
-                        <span className={`status-badge ${getStatusColor(event.status)}`}>
-                          {event.status}
-                        </span>
+              {todayEvents.length === 0 ? (
+                <div className="empty-state">
+                  <p>No events scheduled for today</p>
+                </div>
+              ) : (
+                <div className="events-list">
+                  {todayEvents.map(event => (
+                    <div key={event.id} className="event-item">
+                      <div className="event-icon">
+                        {getEventIcon(event.type)}
                       </div>
+                      <div className="event-content">
+                        <h4>{event.title}</h4>
+                        <p>{event.description}</p>
+                        <div className="event-meta">
+                          <span className="event-time">{event.time}</span>
+                          <span className={`status-badge ${getStatusColor(event.status)}`}>
+                            {event.status}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="event-action"
+                        onClick={() => {
+                          setSelectedEvent(event);
+                          setShowEventDetails(true);
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="1" fill="currentColor" />
+                          <circle cx="12" cy="5" r="1" fill="currentColor" />
+                          <circle cx="12" cy="19" r="1" fill="currentColor" />
+                        </svg>
+                      </button>
                     </div>
-                    <button 
-                      className="event-action"
-                      onClick={() => {
-                        setSelectedEvent(event);
-                        setShowEventDetails(true);
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="1" fill="currentColor" />
-                        <circle cx="12" cy="5" r="1" fill="currentColor" />
-                        <circle cx="12" cy="19" r="1" fill="currentColor" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Upcoming Events */}
-          <div className="panel panel-elevated">
-            <div className="panel-header">
-              <h3>Upcoming Events</h3>
-              <span className="event-count">{upcomingEvents.length}</span>
-            </div>
-            {upcomingEvents.length === 0 ? (
-              <div className="empty-state">
-                <p>No upcoming events</p>
+            {/* Upcoming Events */}
+            <div className="panel panel-elevated">
+              <div className="panel-header">
+                <h3>Upcoming Events</h3>
+                <span className="event-count">{upcomingEvents.length}</span>
               </div>
-            ) : (
-              <div className="events-list">
-                {upcomingEvents.map(event => (
-                  <div key={event.id} className="event-item">
-                    <div className="event-icon">
-                      {getEventIcon(event.type)}
-                    </div>
-                    <div className="event-content">
-                      <h4>{event.title}</h4>
-                      <p>{event.description}</p>
-                      <div className="event-meta">
-                        <span className="event-date">
-                          {new Date(event.date).toLocaleDateString()}
-                        </span>
-                        <span className="event-time">{event.time}</span>
-                        {event.organizationName && (
-                          <span className="event-org">{event.organizationName}</span>
-                        )}
+              {upcomingEvents.length === 0 ? (
+                <div className="empty-state">
+                  <p>No upcoming events</p>
+                </div>
+              ) : (
+                <div className="events-list">
+                  {upcomingEvents.map(event => (
+                    <div key={event.id} className="event-item">
+                      <div className="event-icon">
+                        {getEventIcon(event.type)}
                       </div>
+                      <div className="event-content">
+                        <h4>{event.title}</h4>
+                        <p>{event.description}</p>
+                        <div className="event-meta">
+                          <span className="event-date">
+                            {new Date(event.date).toLocaleDateString()}
+                          </span>
+                          <span className="event-time">{event.time}</span>
+                          {event.organizationName && (
+                            <span className="event-org">{event.organizationName}</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        className="event-action"
+                        onClick={() => {
+                          setSelectedEvent(event);
+                          setShowEventDetails(true);
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="1" fill="currentColor" />
+                          <circle cx="12" cy="5" r="1" fill="currentColor" />
+                          <circle cx="12" cy="19" r="1" fill="currentColor" />
+                        </svg>
+                      </button>
                     </div>
-                    <button 
-                      className="event-action"
-                      onClick={() => {
-                        setSelectedEvent(event);
-                        setShowEventDetails(true);
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="1" fill="currentColor" />
-                        <circle cx="12" cy="5" r="1" fill="currentColor" />
-                        <circle cx="12" cy="19" r="1" fill="currentColor" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

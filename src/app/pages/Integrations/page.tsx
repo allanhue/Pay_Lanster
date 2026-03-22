@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api, type ProjectIntegrationStatus } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
@@ -36,8 +37,11 @@ export default function IntegrationsPage() {
       <Navbar session={session} />
       <section className="content">
         <div className="page-header">
-          <h1>Integrations</h1>
-          <p>Connect payroll modules with third-party systems.</p>
+          <div className="page-header-content">
+            <h1>Integrations</h1>
+            <p>Connect payroll modules with third-party systems.</p>
+          </div>
+          <ModuleActions />
         </div>
 
         <div className="panel panel-elevated">

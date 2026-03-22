@@ -210,8 +210,8 @@ export default function Navbar({ session }: NavbarProps) {
 
           <button aria-label="Notifications" className="top-icon-link notif-button" onClick={() => setOpenDrawer(true)} type="button">
             <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M18 8A6 6 0 0012 2v0a6 6 0 00-6 6c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M13.73 21a2 2 0 01-3.46 0" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M18 8A6 6 0 0012 2v0a6 6 0 00-6 6c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9.2 20.2a3 3 0 005.6 0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {notifications.length > 0 && <span className="notif-dot" />}
           </button>

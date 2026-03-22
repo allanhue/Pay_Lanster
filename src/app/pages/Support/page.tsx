@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
@@ -35,8 +36,8 @@ export default function SupportPage() {
     setLoading(true);
 
     try {
-      await api.sendSupport({ name, email, subject, message });
-      setSuccess("Your message has been sent! We'll get back to you within 24-48 hours.");
+      const result = await api.sendSupport({ name, email, subject, message });
+      setSuccess(result?.message || "Your message has been sent! We'll get back to you within 24-48 hours.");
       setSubject("");
       setMessage("");
     } catch (err) {
@@ -55,8 +56,11 @@ export default function SupportPage() {
       <Navbar session={session} />
       <section className="content content-wide">
         <div className="page-header">
-          <h1>Support Center</h1>
-          <p>Need help with payroll? Contact our team and we'll get back to you within 2-24 hours.</p>
+          <div className="page-header-content">
+            <h1>Support Center</h1>
+            <p>Need help with payroll? Contact our team and we'll get back to you within 2-24 hours.</p>
+          </div>
+          <ModuleActions />
         </div>
 
         {success && <div className="alert alert-success">{success}</div>}
@@ -124,7 +128,6 @@ export default function SupportPage() {
                   rows={6}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Please describe your issue or question in detail. Include any relevant information such as error messages, steps you've already tried, or specific features you need help with."
                   required
                   disabled={loading}
                   className="message-textarea"
@@ -137,7 +140,7 @@ export default function SupportPage() {
               <div className="form-actions">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className={`btn btn-secondary ${loading ? "btn-loading" : ""}`}
                   onClick={() => {
                     setSubject("");
                     setMessage("");

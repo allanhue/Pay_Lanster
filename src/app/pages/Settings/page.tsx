@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api, type SettingsPayload } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
@@ -131,8 +132,11 @@ export default function SettingsPage() {
       <Navbar session={session} />
       <section className="content">
         <div className="page-header">
-          <h1>Payroll Setup</h1>
-          <p>Configure your organization profile, statutory deductions, and payroll settings for {session.orgName}.</p>
+          <div className="page-header-content">
+            <h1>Payroll Setup</h1>
+            <p>Configure your organization profile, statutory deductions, and payroll settings for {session.orgName}.</p>
+          </div>
+          <ModuleActions />
         </div>
 
         {message && <div className="alert alert-success">{message}</div>}

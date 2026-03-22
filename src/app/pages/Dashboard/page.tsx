@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api, type DashboardStats, type PayrollEmployee } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
@@ -101,8 +102,11 @@ export default function DashboardPage() {
       <section className="content content-wide">
         <div className="page-header-row">
           <div className="page-header">
-            <h1>Organization Payroll Dashboard</h1>
-            <p>Track payroll KPIs, trends, and new hires for {session.orgName}.</p>
+            <div className="page-header-content">
+              <h1>Organization Payroll Dashboard</h1>
+              <p>Track payroll KPIs, trends, and new hires for {session.orgName}.</p>
+            </div>
+            <ModuleActions />
           </div>
           <div className="page-header-meta">
             <span className="stat-chip">Active rate: {activeRate}%</span>

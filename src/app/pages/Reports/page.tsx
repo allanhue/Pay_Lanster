@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
+import ModuleActions from "@/app/components/ModuleActions";
 import { api } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
@@ -60,8 +61,11 @@ export default function ReportsPage() {
       <Navbar session={session} />
       <section className="content content-wide">
         <div className="page-header">
-          <h1>Reports</h1>
-          <p>Generate payroll reports in multiple file formats.</p>
+          <div className="page-header-content">
+            <h1>Reports</h1>
+            <p>Generate payroll reports in multiple file formats.</p>
+          </div>
+          <ModuleActions />
         </div>
 
 

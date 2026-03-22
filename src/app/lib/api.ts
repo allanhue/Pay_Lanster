@@ -39,7 +39,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
             throw new Error(parsed.message);
           }
         } catch {
-          // Ignore JSON parse errors and fall back to raw text.
+          // igore json parse error s
         }
         throw new Error(bodyText || `Request failed with status ${response.status}`);
       }
