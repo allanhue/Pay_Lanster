@@ -1,5 +1,11 @@
-const DEFAULT_BASE_URL = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080").replace(/\/+$/, "");
+// src/app/lib/api.ts
+
+const DEFAULT_BASE_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080"
+).replace(/\/+$/, "");
+
 const REQUEST_TIMEOUT_MS = 12000;
+
 let runtimeBaseUrl = DEFAULT_BASE_URL;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -10,53 +16,49 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
-      let response: Response;
-      try {
-        response = await fetch(`${baseUrl}${urlPath}`, {
-          ...init,
-          headers: {
-            "Content-Type": "application/json",
-            ...(init?.headers ?? {}),
-          },
-          cache: "no-store",
-          signal: controller.signal,
-        });
-      } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") {
-          throw new Error("Request timed out. Check backend availability.");
-        }
-        throw err;
-      }
+      const response = await fetch(`${baseUrl}${urlPath}`, {
+        ...init,
+        headers: {
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {}),
+        },
+        cache: "no-store",
+        signal: controller.signal,
+      });
 
       if (!response.ok) {
         const bodyText = await response.text();
         try {
-          const parsed = JSON.parse(bodyText) as { error?: string; message?: string };
-          if (parsed?.error) {
-            throw new Error(parsed.error);
-          }
-          if (parsed?.message) {
-            throw new Error(parsed.message);
-          }
-        } catch {
-          // igore json parse error s
-        }
-        throw new Error(bodyText || `Request failed with status ${response.status}`);
+          const parsed = JSON.parse(bodyText) as {
+            error?: string;
+            message?: string;
+          };
+          if (parsed?.error) throw new Error(parsed.error);
+          if (parsed?.message) throw new Error(parsed.message);
+        } catch {}
+        throw new Error(
+          bodyText || `Request failed with status ${response.status}`
+        );
       }
 
       return (await response.json()) as T;
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        throw new Error("Request timed out. Check backend availability.");
+      }
+      throw err;
     } finally {
       clearTimeout(timeoutId);
     }
   };
 
-try {
-  return await attempt(runtimeBaseUrl);
-} catch (err) {
-  throw err;
-}
+  try {
+    return await attempt(runtimeBaseUrl);
+  } catch (err) {
+    throw err;
+  }
+} // ✅ FIX: properly closed function
 
-//so export 
 export type PayrollEmployee = {
   id: string;
   orgId: string;
@@ -230,89 +232,171 @@ export const api = {
     email: string;
     password: string;
     orgName: string;
-  }) => request<AuthPayload>("/api/auth/signup", { method: "POST", body: JSON.stringify(body) }),
-
-  login: (body: { email: string; password: string }) =>
-    request<AuthPayload>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
-
-  listEmployees: (orgId: string) => request<PayrollEmployee[]>(`/api/employees?orgId=${encodeURIComponent(orgId)}`),
-
-  addEmployee: (body: Omit<PayrollEmployee, "id" | "status">) =>
-    request<PayrollEmployee>("/api/employees", { method: "POST", body: JSON.stringify(body) }),
-
-  updateEmployee: (body: PayrollEmployee) =>
-    request<PayrollEmployee>("/api/employees", { method: "PUT", body: JSON.stringify(body) }),
-
-  deleteEmployee: (orgId: string, id: string) =>
-    request<{ deleted: boolean }>(`/api/employees?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
+  }) =>
+    request<AuthPayload>("/api/auth/signup", {
+      method: "POST",
+      body: JSON.stringify(body),
     }),
 
-  orgDashboard: (orgId: string) => request<DashboardStats>(`/api/dashboard/org?orgId=${encodeURIComponent(orgId)}`),
+  login: (body: { email: string; password: string }) =>
+    request<AuthPayload>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
-  systemDashboard: () => request<{ tenants: number; employees: number; payroll: number }>("/api/dashboard/system"),
+  listEmployees: (orgId: string) =>
+    request<PayrollEmployee[]>(
+      `/api/employees?orgId=${encodeURIComponent(orgId)}`
+    ),
 
-  tenantAnalytics: () => request<TenantStats[]>("/api/analytics/tenants"),
+  addEmployee: (body: Omit<PayrollEmployee, "id" | "status">) =>
+    request<PayrollEmployee>("/api/employees", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateEmployee: (body: PayrollEmployee) =>
+    request<PayrollEmployee>("/api/employees", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  deleteEmployee: (orgId: string, id: string) =>
+    request<{ deleted: boolean }>(
+      `/api/employees?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    ),
+
+  orgDashboard: (orgId: string) =>
+    request<DashboardStats>(
+      `/api/dashboard/org?orgId=${encodeURIComponent(orgId)}`
+    ),
+
+  systemDashboard: () =>
+    request<{ tenants: number; employees: number; payroll: number }>(
+      "/api/dashboard/system"
+    ),
+
+  tenantAnalytics: () =>
+    request<TenantStats[]>("/api/analytics/tenants"),
 
   saveSettings: (body: SettingsPayload) =>
-    request<SettingsPayload>("/api/settings", { method: "POST", body: JSON.stringify(body) }),
+    request<SettingsPayload>("/api/settings", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
-  getSettings: (orgId: string) => request<SettingsPayload>(`/api/settings?orgId=${encodeURIComponent(orgId)}`),
+  getSettings: (orgId: string) =>
+    request<SettingsPayload>(
+      `/api/settings?orgId=${encodeURIComponent(orgId)}`
+    ),
 
-  sendSupport: (body: { name: string; email: string; subject: string; message: string }) =>
-    request<{ sent: boolean; message: string }>("/api/support", { method: "POST", body: JSON.stringify(body) }),
+  sendSupport: (body: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+  }) =>
+    request<{ sent: boolean; message: string }>("/api/support", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   sendMail: (body: { to: string[]; subject: string; html: string }) =>
-    request<{ sent: boolean; message: string }>("/api/mail/send", { method: "POST", body: JSON.stringify(body) }),
+    request<{ sent: boolean; message: string }>("/api/mail/send", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   listApprovals: (orgId: string) =>
-    request<ApprovalItem[]>(`/api/approvals?orgId=${encodeURIComponent(orgId)}`),
+    request<ApprovalItem[]>(
+      `/api/approvals?orgId=${encodeURIComponent(orgId)}`
+    ),
 
-  updateApprovalStatus: (body: { orgId: string; id: string; status: "pending" | "approved" | "rejected" }) =>
-    request<ApprovalItem>("/api/approvals", { method: "POST", body: JSON.stringify(body) }),
+  updateApprovalStatus: (body: {
+    orgId: string;
+    id: string;
+    status: "pending" | "approved" | "rejected";
+  }) =>
+    request<ApprovalItem>("/api/approvals", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   listPayruns: (orgId: string) =>
-    request<Payrun[]>(`/api/payruns?orgId=${encodeURIComponent(orgId)}`),
+    request<Payrun[]>(
+      `/api/payruns?orgId=${encodeURIComponent(orgId)}`
+    ),
 
   createPayrun: (body: Omit<Payrun, "id">) =>
-    request<Payrun>("/api/payruns", { method: "POST", body: JSON.stringify(body) }),
+    request<Payrun>("/api/payruns", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   listLoans: (orgId: string) =>
     request<Loan[]>(`/api/loans?orgId=${encodeURIComponent(orgId)}`),
 
   createLoan: (body: Omit<Loan, "id">) =>
-    request<Loan>("/api/loans", { method: "POST", body: JSON.stringify(body) }),
+    request<Loan>("/api/loans", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   updateLoan: (body: Loan) =>
-    request<Loan>("/api/loans", { method: "PUT", body: JSON.stringify(body) }),
+    request<Loan>("/api/loans", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
 
   deleteLoan: (orgId: string, id: string) =>
-    request<{ deleted: boolean }>(`/api/loans?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    }),
+    request<{ deleted: boolean }>(
+      `/api/loans?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    ),
 
   listBenefits: (orgId: string) =>
-    request<Benefit[]>(`/api/benefits?orgId=${encodeURIComponent(orgId)}`),
+    request<Benefit[]>(
+      `/api/benefits?orgId=${encodeURIComponent(orgId)}`
+    ),
 
   createBenefit: (body: Omit<Benefit, "id">) =>
-    request<Benefit>("/api/benefits", { method: "POST", body: JSON.stringify(body) }),
-
-  deleteBenefit: (orgId: string, id: string) =>
-    request<{ deleted: boolean }>(`/api/benefits?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
+    request<Benefit>("/api/benefits", {
+      method: "POST",
+      body: JSON.stringify(body),
     }),
 
+  deleteBenefit: (orgId: string, id: string) =>
+    request<{ deleted: boolean }>(
+      `/api/benefits?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    ),
+
   listPayslips: (orgId: string) =>
-    request<Payslip[]>(`/api/payslips?orgId=${encodeURIComponent(orgId)}`),
+    request<Payslip[]>(
+      `/api/payslips?orgId=${encodeURIComponent(orgId)}`
+    ),
 
   createPayslip: (body: Omit<Payslip, "id">) =>
-    request<Payslip>("/api/payslips", { method: "POST", body: JSON.stringify(body) }),
+    request<Payslip>("/api/payslips", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   projectIntegrationStatus: () =>
     request<ProjectIntegrationStatus>("/api/integrations/project"),
 
-  sendProjectReport: (body: { orgId: string; period: string; reportUrl?: string; summary?: string }) =>
-    request<{ queued: boolean; message: string }>("/api/integrations/project/report", { method: "POST", body: JSON.stringify(body) }),
-
-  getDemoData: () => request<DemoData>("/api/demo/data"),
+  sendProjectReport: (body: {
+    orgId: string;
+    period: string;
+    reportUrl?: string;
+    summary?: string;
+  }) =>
+    request<{ queued: boolean; message: string }>(
+      "/api/integrations/project/report",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      }
+    ),
 };
