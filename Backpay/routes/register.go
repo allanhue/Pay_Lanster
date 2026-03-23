@@ -21,5 +21,4 @@ func (a *App) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/api/approvals", a.approvalsHandler)
 	mux.HandleFunc("/api/integrations/project", a.projectIntegrationStatus)
 	mux.HandleFunc("/api/integrations/project/report", a.projectIntegrationReport)
-	mux.HandleFunc("/api/demo/data", a.demoData)
 }
