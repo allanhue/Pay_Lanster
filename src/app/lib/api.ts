@@ -50,18 +50,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
   };
 
-  try {
-    return await attempt(runtimeBaseUrl);
-  } catch (err) {
-    const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
-    if (isLocalhost && runtimeBaseUrl !== "http://localhost:8080") {
-      runtimeBaseUrl = "http://localhost:8080";
-      return await attempt(runtimeBaseUrl);
-    }
-    throw err;
-  }
+try {
+  return await attempt(runtimeBaseUrl);
+} catch (err) {
+  throw err;
 }
 
+//so export 
 export type PayrollEmployee = {
   id: string;
   orgId: string;

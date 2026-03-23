@@ -18,6 +18,7 @@ func main() {
 	// Load local development environment variables from `.env` (current dir) and `Backpay/.env` (repo root runs).
 	_ = godotenv.Load()
 	_ = godotenv.Load("Backpay/.env")
+	_ = gin.ForceConsoleColor()
 
 	initDBOnly := flag.Bool("init-db", false, "initialize database tables and exit")
 	seedDemo := flag.Bool("seed-demo", false, "seed demo data into database and exit")
@@ -133,11 +134,46 @@ func (r *responseRecorder) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
+// func WithLogging(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
+// 		start := time.Now()
+// 		next.ServeHTTP(rec, r)
+// 		log.Printf("%s %s %d %s", r.Method, r.URL.RequestURI(), rec.status, fmt.Sprintf("%dms", time.Since(start).Milliseconds()))
+// 	})
+// }
+
 func WithLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
 		start := time.Now()
 		next.ServeHTTP(rec, r)
-		log.Printf("%s %s %d %s", r.Method, r.URL.RequestURI(), rec.status, fmt.Sprintf("%dms", time.Since(start).Milliseconds()))
+
+		// Define colors (ANSI escape codes)
+		reset := "\033[0m"
+		white := "\033[37m"
+		
+		// Logic to pick the status box color
+		var statusColor string
+		switch {
+		case rec.status >= 200 && rec.status < 300:
+			statusColor = "\033[97;42m" 
+		case rec.status >= 300 && rec.status < 400:
+			statusColor = "\033[97;44m" 
+		case rec.status >= 400 && rec.status < 500:
+			statusColor = "\033[97;43m" 
+		default:
+			statusColor = "\033[97;41m" // White text on Red background
+		}
+
+		// Format the log to look like Gin's [GIN] style
+		fmt.Printf("[BACKPAY] %v | %s %3d %s | %13v | %15s | %-7s %s\n",
+			time.Now().Format("2006/01/02 - 15:04:05"),
+			statusColor, rec.status, reset,
+			time.Since(start),
+			r.RemoteAddr,
+			r.Method,
+			r.URL.Path,
+		)
 	})
 }
