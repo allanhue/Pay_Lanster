@@ -36,12 +36,17 @@ export default function LoansPage() {
       return;
     }
     setSession(current);
-    api.listLoans(current.orgId)
-      .then((data) => setLoans(Array.isArray(data) ? data : []))
-      .catch(() => setLoans([]));
-    api.listEmployees(current.orgId)
-      .then((data) => setEmployees(Array.isArray(data) ? data : []))
-      .catch(() => setEmployees([]));
+    if (current.orgId) {
+      api.listLoans(current.orgId)
+        .then((data) => setLoans(Array.isArray(data) ? data : []))
+        .catch(() => setLoans([]));
+      api.listEmployees(current.orgId)
+        .then((data) => setEmployees(Array.isArray(data) ? data : []))
+        .catch(() => setEmployees([]));
+    } else {
+      setLoans([]);
+      setEmployees([]);
+    }
   }, [router]);
 
   const employeeSuggestions = useMemo(() => {

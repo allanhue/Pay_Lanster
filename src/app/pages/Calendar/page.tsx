@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import ModuleActions from "@/app/components/ModuleActions";
-import { api } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 interface CalendarEvent {
@@ -49,19 +48,9 @@ export default function OrgCalendarPage() {
       return;
     }
     setSession(current);
-    loadEvents();
+    setEvents([]);
+    setLoading(false);
   }, [router]);
-
-  const loadEvents = async () => {
-    try {
-      const data = await api.getDemoData();
-      setEvents(Array.isArray(data.calendar) ? (data.calendar as CalendarEvent[]) : []);
-    } catch (error) {
-      console.error("Failed to load events:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredEvents = events.filter(event => {
     const matchesSearch = searchQuery === "" || 

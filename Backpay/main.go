@@ -17,6 +17,9 @@ func main() {
 	_ = godotenv.Load()
 	_ = godotenv.Load("Backpay/.env")
 
+	// Ensure colored Gin logs in terminals that don't auto-detect color support.
+	gin.ForceConsoleColor()
+
 	//  Setup Flags
 	initDBOnly := flag.Bool("init-db", false, "initialize database tables and exit")
 	seedDemo := flag.Bool("seed-demo", false, "seed demo data into database and exit")
@@ -82,8 +85,8 @@ func CORSMiddleware() gin.HandlerFunc {
 			c.Header("Vary", "Origin")
 		}
 
-		c.Header("Access-Control-Allow-Headers", "Content-Type")
-		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
@@ -97,7 +100,11 @@ func CORSMiddleware() gin.HandlerFunc {
 
 func parseAllowedOrigins(raw string) []string {
 	if strings.TrimSpace(raw) == "" {
-		return []string{"http://localhost:3000"}
+		return []string{
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+			"https://paylanster.vercel.app",
+		}
 	}
 	parts := strings.Split(raw, ",")
 	origins := make([]string, 0, len(parts))

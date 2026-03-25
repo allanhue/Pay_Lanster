@@ -40,7 +40,19 @@ export default function ConfigurationPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPlan, setFilterPlan] = useState("all");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    country: string;
+    industry: string;
+    size: string;
+    adminUser: string;
+    subscriptionPlan: "basic" | "professional" | "enterprise";
+    billingCycle: "monthly" | "yearly";
+  }>({
     name: "",
     email: "",
     phone: "",
@@ -50,8 +62,8 @@ export default function ConfigurationPage() {
     industry: "",
     size: "",
     adminUser: "",
-    subscriptionPlan: "basic" as const,
-    billingCycle: "monthly" as const
+    subscriptionPlan: "basic",
+    billingCycle: "monthly"
   });
   const router = useRouter();
 

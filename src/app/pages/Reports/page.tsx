@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import ModuleActions from "@/app/components/ModuleActions";
-import { api } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
 export default function ReportsPage() {
@@ -27,30 +26,10 @@ export default function ReportsPage() {
       return;
     }
     setSession(current);
-    api.getDemoData().then((data) => {
-      setReports(Array.isArray(data.reports) ? data.reports : []);
-    }).catch(() => {
-      setReports([]);
-    });
+    setReports([]);
   }, [router]);
 
   const readyReports = useMemo(() => reports.filter((report) => report.status === "ready").length, [reports]);
-
-  const reportsWithActivity = useMemo(() => {
-    const exists = reports.some((report) => report.title.toLowerCase().includes("activity log"));
-    if (exists) return reports;
-    return [
-      {
-        id: "RP-ACT",
-        title: "Activity Log",
-        period: "Last 30 days",
-        category: "Audit",
-        status: "ready",
-        updatedAt: "Today",
-      },
-      ...reports,
-    ];
-  }, [reports]);
 
   if (!session) {
     return <main className="centered">Loading...</main>;
@@ -156,7 +135,7 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {reportsWithActivity.map((report) => (
+              {reports.map((report) => (
                 <tr key={report.id}>
                   <td>{report.title}</td>
                   <td>{report.category}</td>
