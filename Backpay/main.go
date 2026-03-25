@@ -1,29 +1,28 @@
 package main
 
 import (
+	"backpay/routes"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
-	"backpay/routes"
-
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Load local development environment variables from `.env` (current dir) and `Backpay/.env` (repo root runs).
+	// Load local development environment variables
 	_ = godotenv.Load()
 	_ = godotenv.Load("Backpay/.env")
-	_ = gin.ForceConsoleColor()
 
+	//  Setup Flags
 	initDBOnly := flag.Bool("init-db", false, "initialize database tables and exit")
 	seedDemo := flag.Bool("seed-demo", false, "seed demo data into database and exit")
 	flag.Parse()
 
+	//  Database Connection
 	db, err := connectDatabase()
 	if err != nil {
 		log.Fatal("db setup:", err)
@@ -32,6 +31,7 @@ func main() {
 		defer db.Close()
 	}
 
+	//  Handle DB commands
 	if *initDBOnly {
 		if db == nil {
 			log.Println("database not configured. Set NEON_DATABASE_URL then run: go run . -init-db")
@@ -53,49 +53,52 @@ func main() {
 		return
 	}
 
+	//  Setup Router (Gin)
 	app := routes.NewApp(db)
-	mux := http.NewServeMux()
-	app.Register(mux)
+	r := gin.Default()
+	r.Use(CORSMiddleware())
+	app.Register(r)
 
-	// Get port from environment or default to 8080 for local dev
+	//  Get port
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
+	//  Start Server
 	log.Printf("Server starting on port %s", port)
-	if err := http.ListenAndServe(":"+port, WithLogging(WithCORS(mux))); err != nil {
-		log.Fatal(err)
-	}
+	r.Run(":" + port)
 }
 
+// -
 
-func WithCORS(next http.Handler) http.Handler {
+func CORSMiddleware() gin.HandlerFunc {
 	allowedOrigins := parseAllowedOrigins(os.Getenv("CORS_ALLOWED_ORIGINS"))
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
+	return gin.HandlerFunc(func(c *gin.Context) {
+		origin := c.Request.Header.Get("Origin")
 		if isAllowedOrigin(origin, allowedOrigins) {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Vary", "Origin")
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Vary", "Origin")
 		}
 
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
+		c.Header("Access-Control-Allow-Headers", "Content-Type")
+		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		c.Next()
 	})
 }
+
+// --- Helper Functions ---
 
 func parseAllowedOrigins(raw string) []string {
 	if strings.TrimSpace(raw) == "" {
 		return []string{"http://localhost:3000"}
 	}
-
 	parts := strings.Split(raw, ",")
 	origins := make([]string, 0, len(parts))
 	for _, part := range parts {
@@ -104,11 +107,6 @@ func parseAllowedOrigins(raw string) []string {
 			origins = append(origins, origin)
 		}
 	}
-
-	if len(origins) == 0 {
-		return []string{"http://localhost:3000"}
-	}
-
 	return origins
 }
 
@@ -122,58 +120,4 @@ func isAllowedOrigin(origin string, allowed []string) bool {
 		}
 	}
 	return false
-}
-
-type responseRecorder struct {
-	http.ResponseWriter
-	status int
-}
-
-func (r *responseRecorder) WriteHeader(status int) {
-	r.status = status
-	r.ResponseWriter.WriteHeader(status)
-}
-
-// func WithLogging(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
-// 		start := time.Now()
-// 		next.ServeHTTP(rec, r)
-// 		log.Printf("%s %s %d %s", r.Method, r.URL.RequestURI(), rec.status, fmt.Sprintf("%dms", time.Since(start).Milliseconds()))
-// 	})
-// }
-
-func WithLogging(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
-		start := time.Now()
-		next.ServeHTTP(rec, r)
-
-		// Define colors (ANSI escape codes)
-		reset := "\033[0m"
-		white := "\033[37m"
-		
-		// Logic to pick the status box color
-		var statusColor string
-		switch {
-		case rec.status >= 200 && rec.status < 300:
-			statusColor = "\033[97;42m" 
-		case rec.status >= 300 && rec.status < 400:
-			statusColor = "\033[97;44m" 
-		case rec.status >= 400 && rec.status < 500:
-			statusColor = "\033[97;43m" 
-		default:
-			statusColor = "\033[97;41m" // White text on Red background
-		}
-
-		// Format the log to look like Gin's [GIN] style
-		fmt.Printf("[BACKPAY] %v | %s %3d %s | %13v | %15s | %-7s %s\n",
-			time.Now().Format("2006/01/02 - 15:04:05"),
-			statusColor, rec.status, reset,
-			time.Since(start),
-			r.RemoteAddr,
-			r.Method,
-			r.URL.Path,
-		)
-	})
 }

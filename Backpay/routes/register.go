@@ -1,24 +1,28 @@
 package routes
 
-import "net/http"
+import (
+	"github.com/gin-gonic/gin"
+)
 
-func (a *App) Register(mux *http.ServeMux) {
-	mux.HandleFunc("/health", a.health)
-	mux.HandleFunc("/api/auth/signup", a.signup)
-	mux.HandleFunc("/api/auth/login", a.login)
-	mux.HandleFunc("/api/employees", a.employeesHandler)
-	mux.HandleFunc("/api/payruns", a.payrunsHandler)
-	mux.HandleFunc("/api/loans", a.loansHandler)
-	mux.HandleFunc("/api/benefits", a.benefitsHandler)
-	mux.HandleFunc("/api/payslips", a.payslipsHandler)
-	mux.HandleFunc("/api/dashboard/org", a.orgDashboard)
-	mux.HandleFunc("/api/dashboard/system", a.systemDashboard)
-	mux.HandleFunc("/api/analytics/tenants", a.tenantAnalytics)
-	mux.HandleFunc("/api/settings", a.settingsHandler)
-	mux.HandleFunc("/api/mail/send", a.sendMail)
-	mux.HandleFunc("/api/mail/test", a.sendMailTest)
-	mux.HandleFunc("/api/support", a.supportForm)
-	mux.HandleFunc("/api/approvals", a.approvalsHandler)
-	mux.HandleFunc("/api/integrations/project", a.projectIntegrationStatus)
-	mux.HandleFunc("/api/integrations/project/report", a.projectIntegrationReport)
+// Change (mux *http.ServeMux) to (r *gin.Engine)
+func (a *App) Register(r *gin.Engine) {
+	// Use gin.WrapF to keep using your existing handlers
+	r.GET("/health", gin.WrapF(a.health))
+	r.POST("/api/auth/signup", gin.WrapF(a.signup))
+	r.POST("/api/auth/login", gin.WrapF(a.login))
+	r.Any("/api/employees", gin.WrapF(a.employeesHandler))
+	r.Any("/api/payruns", gin.WrapF(a.payrunsHandler))
+	r.Any("/api/loans", gin.WrapF(a.loansHandler))
+	r.Any("/api/benefits", gin.WrapF(a.benefitsHandler))
+	r.Any("/api/payslips", gin.WrapF(a.payslipsHandler))
+	r.GET("/api/dashboard/org", gin.WrapF(a.orgDashboard))
+	r.GET("/api/dashboard/system", gin.WrapF(a.systemDashboard))
+	r.GET("/api/analytics/tenants", gin.WrapF(a.tenantAnalytics))
+	r.Any("/api/settings", gin.WrapF(a.settingsHandler))
+	r.POST("/api/mail/send", gin.WrapF(a.sendMail))
+	r.POST("/api/mail/test", gin.WrapF(a.sendMailTest))
+	r.POST("/api/support", gin.WrapF(a.supportForm))
+	r.Any("/api/approvals", gin.WrapF(a.approvalsHandler))
+	r.GET("/api/integrations/project", gin.WrapF(a.projectIntegrationStatus))
+	r.GET("/api/integrations/project/report", gin.WrapF(a.projectIntegrationReport))
 }

@@ -67,8 +67,8 @@ export default function ApprovalsPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!session?.orgId || !autoRefresh) return;
-    const timer = setInterval(() => refreshApprovals(session.orgId, true), 20000);
+    if (!session || !session.orgId || !autoRefresh) return;
+    const timer = setInterval(() => refreshApprovals(session.orgId!, true), 20000);
     return () => clearInterval(timer);
   }, [session?.orgId, autoRefresh]);
 
