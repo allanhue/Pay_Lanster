@@ -37,9 +37,13 @@ export default function BenefitsAndAllowancesPage() {
       return;
     }
     setSession(current);
-    api.listBenefits(current.orgId)
-      .then((data) => setBenefits(Array.isArray(data) ? data : []))
-      .catch(() => setBenefits([]));
+    if (current.orgId) {
+      api.listBenefits(current.orgId)
+        .then((data) => setBenefits(Array.isArray(data) ? data : []))
+        .catch(() => setBenefits([]));
+    } else {
+      setBenefits([]);
+    }
   }, [router]);
 
   const handleAdd = async (event: FormEvent) => {
