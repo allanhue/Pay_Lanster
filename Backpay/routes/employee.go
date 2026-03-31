@@ -3,6 +3,7 @@ package routes
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -59,6 +60,7 @@ func (a *App) listEmployees(w http.ResponseWriter, r *http.Request) {
 			orgID,
 		)
 		if err != nil {
+			log.Printf("listEmployees query failed orgId=%s err=%v", orgID, err)
 			writeError(w, http.StatusInternalServerError, "could not load employees")
 			return
 		}
@@ -91,12 +93,14 @@ func (a *App) listEmployees(w http.ResponseWriter, r *http.Request) {
 				&employee.Location,
 				&employee.HireDate,
 			); err != nil {
+				log.Printf("listEmployees scan failed orgId=%s err=%v", orgID, err)
 				writeError(w, http.StatusInternalServerError, "could not load employees")
 				return
 			}
 			employees = append(employees, employee)
 		}
 		if err := rows.Err(); err != nil {
+			log.Printf("listEmployees rows error orgId=%s err=%v", orgID, err)
 			writeError(w, http.StatusInternalServerError, "could not load employees")
 			return
 		}
@@ -133,14 +137,30 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 	if req.ContractType == "" {
 		req.ContractType = "full_time"
 	}
+	normalizeEnum := func(value string) string {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			return ""
+		}
+		return strings.ToLower(strings.ReplaceAll(trimmed, " ", "_"))
+	}
+	req.PayCycle = normalizeEnum(req.PayCycle)
+	req.Status = normalizeEnum(req.Status)
+	req.ContractType = normalizeEnum(req.ContractType)
 
 	if a.db != nil {
 		orgName := ""
-		_ = a.db.QueryRow(`SELECT name FROM organizations WHERE id = $1`, req.OrgID).Scan(&orgName)
-		prefix := prefixFromName(orgName)
-		if orgName == "" {
-			prefix = prefixFromName(req.OrgID)
+		err := a.db.QueryRow(`SELECT name FROM organizations WHERE id = $1`, req.OrgID).Scan(&orgName)
+		if err == sql.ErrNoRows {
+			writeError(w, http.StatusBadRequest, "organization not found")
+			return
 		}
+		if err != nil {
+			log.Printf("createEmployee org lookup failed orgId=%s err=%v", req.OrgID, err)
+			writeError(w, http.StatusInternalServerError, "could not save employee")
+			return
+		}
+		prefix := prefixFromName(orgName)
 
 		var lastErr error
 		for i := 0; i < 5; i++ {
@@ -150,7 +170,7 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			req.ID = prefix + "-" + seq
-			if _, err := a.db.Exec(
+		if _, err := a.db.Exec(
 			`INSERT INTO employees (
          id, org_id, full_name, email, phone, title, position, designation, department, salary, pay_cycle, status,
          tax_id, nssf, nhif, paye, bank_name, bank_account_name, bank_account, contract_type, location, hire_date
@@ -184,6 +204,7 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 			req.HireDate,
 			); err != nil {
 				lastErr = err
+				log.Printf("createEmployee insert failed orgId=%s err=%v", req.OrgID, err)
 				if strings.Contains(err.Error(), "duplicate key") {
 					continue
 				}
@@ -280,6 +301,7 @@ func (a *App) updateEmployee(w http.ResponseWriter, r *http.Request) {
 			req.OrgID,
 		)
 		if err != nil {
+			log.Printf("updateEmployee failed orgId=%s id=%s err=%v", req.OrgID, req.ID, err)
 			writeError(w, http.StatusInternalServerError, "could not update employee")
 			return
 		}
@@ -322,6 +344,7 @@ func (a *App) deleteEmployee(w http.ResponseWriter, r *http.Request) {
 	if a.db != nil {
 		res, err := a.db.Exec(`DELETE FROM employees WHERE id = $1 AND org_id = $2`, empID, orgID)
 		if err != nil {
+			log.Printf("deleteEmployee failed orgId=%s id=%s err=%v", orgID, empID, err)
 			writeError(w, http.StatusInternalServerError, "could not delete employee")
 			return
 		}

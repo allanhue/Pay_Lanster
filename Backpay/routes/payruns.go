@@ -3,6 +3,7 @@ package routes
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -57,6 +58,7 @@ func (a *App) listPayruns(w http.ResponseWriter, r *http.Request) {
 			orgID,
 		)
 		if err != nil {
+			log.Printf("listPayruns query failed orgId=%s err=%v", orgID, err)
 			writeError(w, http.StatusInternalServerError, "could not load payruns")
 			return
 		}
@@ -77,12 +79,14 @@ func (a *App) listPayruns(w http.ResponseWriter, r *http.Request) {
 				&row.Status,
 				&row.CreatedAt,
 			); err != nil {
+				log.Printf("listPayruns scan failed orgId=%s err=%v", orgID, err)
 				writeError(w, http.StatusInternalServerError, "could not load payruns")
 				return
 			}
 			payruns = append(payruns, row)
 		}
 		if err := rows.Err(); err != nil {
+			log.Printf("listPayruns rows error orgId=%s err=%v", orgID, err)
 			writeError(w, http.StatusInternalServerError, "could not load payruns")
 			return
 		}
@@ -138,6 +142,7 @@ func (a *App) createPayrun(w http.ResponseWriter, r *http.Request) {
 			req.Employees,
 			req.Status,
 		); err != nil {
+			log.Printf("createPayrun insert failed orgId=%s err=%v", req.OrgID, err)
 			writeError(w, http.StatusInternalServerError, "could not save payrun")
 			return
 		}
