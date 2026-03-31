@@ -5,8 +5,18 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 )
+
+func normalizeEnum(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	return strings.ToLower(strings.ReplaceAll(trimmed, " ", "_"))
+}
 
 func (a *App) employeesHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -170,6 +180,16 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			req.ID = prefix + "-" + seq
+			var hireDate sql.NullTime
+			if strings.TrimSpace(req.HireDate) != "" {
+				if parsed, err := time.Parse("2006-01-02", req.HireDate); err == nil {
+					hireDate = sql.NullTime{Time: parsed, Valid: true}
+				} else {
+					lastErr = err
+					log.Printf("createEmployee invalid hire_date orgId=%s value=%s err=%v", req.OrgID, req.HireDate, err)
+					break
+				}
+			}
 		if _, err := a.db.Exec(
 			`INSERT INTO employees (
          id, org_id, full_name, email, phone, title, position, designation, department, salary, pay_cycle, status,
@@ -178,7 +198,7 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
        VALUES (
          $1, $2, $3, $4, $5, $6, $7, $8,
          $9, $10, $11, $12, $13, $14, $15, $16,
-         $17, $18, $19, $20, NULLIF($21, '')
+         $17, $18, $19, $20, $21, $22
        )`,
 			req.ID,
 			req.OrgID,
@@ -201,7 +221,7 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 			req.BankAccount,
 			req.ContractType,
 			req.Location,
-			req.HireDate,
+			hireDate,
 			); err != nil {
 				lastErr = err
 				log.Printf("createEmployee insert failed orgId=%s err=%v", req.OrgID, err)
@@ -217,6 +237,13 @@ func (a *App) createEmployee(w http.ResponseWriter, r *http.Request) {
 
 		if lastErr == sql.ErrNoRows {
 			writeError(w, http.StatusBadRequest, "organization not found")
+			return
+		}
+		if lastErr != nil {
+			log.Printf("createEmployee failed orgId=%s err=%v", req.OrgID, lastErr)
+		}
+		if os.Getenv("APP_ENV") == "dev" && lastErr != nil {
+			writeError(w, http.StatusInternalServerError, "could not save employee: "+lastErr.Error())
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "could not save employee")
@@ -252,8 +279,21 @@ func (a *App) updateEmployee(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "orgId and id are required")
 		return
 	}
+	req.PayCycle = normalizeEnum(req.PayCycle)
+	req.Status = normalizeEnum(req.Status)
+	req.ContractType = normalizeEnum(req.ContractType)
 
 	if a.db != nil {
+		var hireDate sql.NullTime
+		if strings.TrimSpace(req.HireDate) != "" {
+			if parsed, err := time.Parse("2006-01-02", req.HireDate); err == nil {
+				hireDate = sql.NullTime{Time: parsed, Valid: true}
+			} else {
+				log.Printf("updateEmployee invalid hire_date orgId=%s id=%s value=%s err=%v", req.OrgID, req.ID, req.HireDate, err)
+				writeError(w, http.StatusBadRequest, "invalid hireDate, expected YYYY-MM-DD")
+				return
+			}
+		}
 		res, err := a.db.Exec(
 			`UPDATE employees
        SET full_name = $1,
@@ -275,7 +315,7 @@ func (a *App) updateEmployee(w http.ResponseWriter, r *http.Request) {
            bank_account = $17,
            contract_type = $18,
            location = $19,
-           hire_date = NULLIF($20, '')
+           hire_date = $20
        WHERE id = $21 AND org_id = $22`,
 			req.FullName,
 			req.Email,
@@ -296,7 +336,7 @@ func (a *App) updateEmployee(w http.ResponseWriter, r *http.Request) {
 			req.BankAccount,
 			req.ContractType,
 			req.Location,
-			req.HireDate,
+			hireDate,
 			req.ID,
 			req.OrgID,
 		)

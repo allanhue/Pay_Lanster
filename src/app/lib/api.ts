@@ -8,6 +8,13 @@ const REQUEST_TIMEOUT_MS = 12000;
 
 let runtimeBaseUrl = DEFAULT_BASE_URL;
 
+if (typeof window !== "undefined") {
+  const host = window.location.hostname;
+  if (host === "localhost" || host === "127.0.0.1") {
+    runtimeBaseUrl = "http://localhost:8080";
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const urlPath = path.startsWith("/") ? path : `/${path}`;
 
