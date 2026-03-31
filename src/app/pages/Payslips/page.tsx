@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import ModuleActions from "@/app/components/ModuleActions";
-import { api, type Payrun, type Payslip } from "@/app/lib/api";
+import { api, type Payrun, type Payslip, type PayrollEmployee, type SettingsPayload } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
+import { getOrgLogo } from "@/app/lib/orgAssets";
 
 export default function PayslipsPage() {
   const [session, setSession] = useState<UserSession | null>(null);
@@ -18,6 +19,9 @@ export default function PayslipsPage() {
   const [approvalFilter, setApprovalFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
   const [emailStatus, setEmailStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [orgLogo, setOrgLogo] = useState<string | null>(null);
+  const [orgSettings, setOrgSettings] = useState<SettingsPayload | null>(null);
+  const [employees, setEmployees] = useState<PayrollEmployee[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,15 +36,25 @@ export default function PayslipsPage() {
     }
     setSession(current);
     if (current.orgId) {
+      setOrgLogo(getOrgLogo(current.orgId));
+    }
+    if (current.orgId) {
       api.listPayslips(current.orgId)
         .then((data) => setPayslips(Array.isArray(data) ? data : []))
         .catch(() => setPayslips([]));
       api.listPayruns(current.orgId)
         .then((data) => setPayruns(Array.isArray(data) ? data : []))
         .catch(() => setPayruns([]));
+      api.getSettings(current.orgId)
+        .then((data) => setOrgSettings(data))
+        .catch(() => setOrgSettings(null));
+      api.listEmployees(current.orgId)
+        .then((data) => setEmployees(Array.isArray(data) ? data : []))
+        .catch(() => setEmployees([]));
     } else {
       setPayslips([]);
       setPayruns([]);
+      setEmployees([]);
     }
   }, [router]);
 
@@ -99,32 +113,59 @@ export default function PayslipsPage() {
     setPayslips((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const money = (value: number) =>
-    value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const currency = orgSettings?.currency || "USD";
+  const money = (value: number) => {
+    try {
+      return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
+    } catch {
+      return `${currency} ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+  };
+
+  const employeeIndex = useMemo(() => {
+    const byEmail = new Map<string, PayrollEmployee>();
+    const byName = new Map<string, PayrollEmployee>();
+    employees.forEach((emp) => {
+      if (emp.email) byEmail.set(emp.email.toLowerCase(), emp);
+      if (emp.fullName) byName.set(emp.fullName.toLowerCase(), emp);
+    });
+    return { byEmail, byName };
+  }, [employees]);
 
   const payslipBreakdown = useMemo(() => {
     if (!selectedPayslip) return null;
 
-    const paye = Math.round(selectedPayslip.deductions * 0.7 * 100) / 100;
-    const nssf = Math.round(selectedPayslip.deductions * 0.2 * 100) / 100;
-    const nhif = Math.max(0, Math.round((selectedPayslip.deductions - paye - nssf) * 100) / 100);
+    const taxRate = orgSettings?.taxRate ?? 0;
+    const pensionRate = orgSettings?.pensionRate ?? 0;
+    const paye = Math.round((selectedPayslip.gross * taxRate / 100) * 100) / 100;
+    const pension = Math.round((selectedPayslip.gross * pensionRate / 100) * 100) / 100;
+    const statutory = Math.max(0, Math.round((selectedPayslip.deductions - paye - pension) * 100) / 100);
 
     return {
       earnings: [{ name: "Basic Pay", amount: selectedPayslip.gross }],
       deductions: [
         { name: "PAYE (Income Tax)", amount: paye },
-        { name: "NSSF", amount: nssf },
-        { name: "NHIF", amount: nhif },
+        { name: "Pension", amount: pension },
+        { name: "Statutory Deductions", amount: statutory },
       ],
     };
-  }, [selectedPayslip]);
+  }, [selectedPayslip, orgSettings]);
+
+  const selectedEmployee = useMemo(() => {
+    if (!selectedPayslip) return null;
+    const byEmail = employeeIndex.byEmail.get(selectedPayslip.email.toLowerCase());
+    if (byEmail) return byEmail;
+    return employeeIndex.byName.get(selectedPayslip.employee.toLowerCase()) ?? null;
+  }, [employeeIndex, selectedPayslip]);
 
   const buildPayslipEmailHTML = (slip: Payslip) => {
     const orgName = session?.orgName || "Payroll Lanster";
+    const logo = session?.orgId ? getOrgLogo(session.orgId) : null;
     return `
       <div style="font-family:Segoe UI,Arial,sans-serif;color:#13233f;line-height:1.4">
         <div style="border:1px solid #d9e0eb;border-radius:12px;overflow:hidden">
           <div style="padding:16px 18px;background:linear-gradient(135deg,#007c91,#00af8a);color:white">
+            ${logo ? `<img src="${logo}" alt="${orgName}" style="height:34px;margin-bottom:8px;border-radius:8px;background:#fff;padding:4px"/>` : ""}
             <div style="font-size:14px;opacity:.9">${orgName}</div>
             <div style="font-size:20px;font-weight:700;margin-top:4px">Payslip</div>
             <div style="margin-top:6px;font-size:13px;opacity:.95">Period: ${slip.period} | Slip ID: ${slip.id}</div>
@@ -138,9 +179,9 @@ export default function PayslipsPage() {
               </div>
               <div style="flex:1;min-width:220px;border:1px solid #edf1f6;border-radius:10px;padding:12px">
                 <div style="font-size:12px;color:#5e6f89;text-transform:uppercase;letter-spacing:.06em">Summary</div>
-                <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Gross</span><strong>$${money(slip.gross)}</strong></div>
-                <div style="display:flex;justify-content:space-between;margin-top:4px"><span>Deductions</span><strong>$${money(slip.deductions)}</strong></div>
-                <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px dashed #d9e0eb"><span>Net Pay</span><strong>$${money(slip.net)}</strong></div>
+                <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Gross</span><strong>${money(slip.gross)}</strong></div>
+                <div style="display:flex;justify-content:space-between;margin-top:4px"><span>Deductions</span><strong>${money(slip.deductions)}</strong></div>
+                <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px dashed #d9e0eb"><span>Net Pay</span><strong>${money(slip.net)}</strong></div>
               </div>
             </div>
             <div style="margin-top:16px;border-top:1px solid #edf1f6;padding-top:12px;font-size:12px;color:#5e6f89">
@@ -274,9 +315,9 @@ export default function PayslipsPage() {
                       </div>
                     </td>
                     <td>{item.period}</td>
-                    <td>${money(item.gross)}</td>
-                    <td>${money(item.deductions)}</td>
-                    <td><strong>${money(item.net)}</strong></td>
+                    <td>{money(item.gross)}</td>
+                    <td>{money(item.deductions)}</td>
+                    <td><strong>{money(item.net)}</strong></td>
                     <td>
                       <span className={`status-badge status-${item.approval}`}>
                         {item.approval}
@@ -376,7 +417,11 @@ export default function PayslipsPage() {
             <div className="payslip-sheet">
               <div className="payslip-sheet-header">
                 <div className="payslip-brand">
-                  <div className="payslip-brand-dot" />
+                  {orgLogo ? (
+                    <img className="payslip-brand-logo" src={orgLogo} alt={`${session.orgName ?? "Organization"} logo`} />
+                  ) : (
+                    <div className="payslip-brand-dot" />
+                  )}
                   <div>
                     <div className="payslip-org">{session.orgName || "Payroll Lanster"}</div>
                     <div className="payslip-title">Payslip</div>
@@ -385,6 +430,8 @@ export default function PayslipsPage() {
                 <div className="payslip-meta">
                   <div><span>Period</span><strong>{selectedPayslip.period}</strong></div>
                   <div><span>Slip ID</span><strong>{selectedPayslip.id}</strong></div>
+                  <div><span>Currency</span><strong>{currency}</strong></div>
+                  <div><span>Pay Cycle</span><strong>{selectedEmployee?.payCycle || orgSettings?.payCycle || "—"}</strong></div>
                 </div>
               </div>
 
@@ -397,12 +444,38 @@ export default function PayslipsPage() {
                 <div className="payslip-kv">
                   <div className="payslip-kv-label">Pay Summary</div>
                   <div className="payslip-summary">
-                    <div><span>Gross</span><strong>${money(selectedPayslip.gross)}</strong></div>
-                    <div><span>Deductions</span><strong>${money(selectedPayslip.deductions)}</strong></div>
-                    <div className="payslip-net"><span>Net Pay</span><strong>${money(selectedPayslip.net)}</strong></div>
+                    <div><span>Gross</span><strong>{money(selectedPayslip.gross)}</strong></div>
+                    <div><span>Deductions</span><strong>{money(selectedPayslip.deductions)}</strong></div>
+                    <div className="payslip-net"><span>Net Pay</span><strong>{money(selectedPayslip.net)}</strong></div>
                   </div>
                 </div>
               </div>
+
+              {selectedEmployee && (
+                <div className="payslip-sheet-grid payslip-details-grid">
+                  <div className="payslip-kv">
+                    <div className="payslip-kv-label">Employee Details</div>
+                    <div className="payslip-detail-row"><span>Department</span><strong>{selectedEmployee.department}</strong></div>
+                    <div className="payslip-detail-row"><span>Title</span><strong>{selectedEmployee.title || "—"}</strong></div>
+                    <div className="payslip-detail-row"><span>Position</span><strong>{selectedEmployee.position || "—"}</strong></div>
+                    <div className="payslip-detail-row"><span>Pay Cycle</span><strong>{selectedEmployee.payCycle || "—"}</strong></div>
+                  </div>
+                  <div className="payslip-kv">
+                    <div className="payslip-kv-label">Payroll Details</div>
+                    <div className="payslip-detail-row"><span>Annual Salary</span><strong>{money(selectedEmployee.salary)}</strong></div>
+                    <div className="payslip-detail-row"><span>Contract</span><strong>{selectedEmployee.contractType || "—"}</strong></div>
+                    <div className="payslip-detail-row"><span>Tax ID</span><strong>{selectedEmployee.taxId || "—"}</strong></div>
+                    <div className="payslip-detail-row"><span>NSSF / NHIF</span><strong>{`${selectedEmployee.nssf || "—"} / ${selectedEmployee.nhif || "—"}`}</strong></div>
+                  </div>
+                  <div className="payslip-kv">
+                    <div className="payslip-kv-label">Payment Details</div>
+                    <div className="payslip-detail-row"><span>Bank</span><strong>{selectedEmployee.bankName || "—"}</strong></div>
+                    <div className="payslip-detail-row"><span>Account Name</span><strong>{selectedEmployee.bankAccountName || "—"}</strong></div>
+                    <div className="payslip-detail-row"><span>Account No.</span><strong>{selectedEmployee.bankAccount || "—"}</strong></div>
+                    <div className="payslip-detail-row"><span>Location</span><strong>{selectedEmployee.location || "—"}</strong></div>
+                  </div>
+                </div>
+              )}
 
               <div className="payslip-split">
                 <div className="payslip-split-card">
@@ -415,7 +488,7 @@ export default function PayslipsPage() {
                       {payslipBreakdown.earnings.map((row) => (
                         <tr key={row.name}>
                           <td>{row.name}</td>
-                          <td className="right">${money(row.amount)}</td>
+                          <td className="right">{money(row.amount)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -431,7 +504,7 @@ export default function PayslipsPage() {
                       {payslipBreakdown.deductions.map((row) => (
                         <tr key={row.name}>
                           <td>{row.name}</td>
-                          <td className="right">${money(row.amount)}</td>
+                          <td className="right">{money(row.amount)}</td>
                         </tr>
                       ))}
                     </tbody>

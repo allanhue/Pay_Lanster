@@ -1732,7 +1732,7 @@ button:hover {
 }
 
 .payslip-side-panel {
-  width: 400px;
+  width: 480px;
   flex-shrink: 0;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1900,6 +1900,16 @@ button:hover {
   align-items: center;
 }
 
+.payslip-brand-logo {
+  height: 38px;
+  width: 38px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
 .payslip-brand-dot {
   width: 14px;
   height: 14px;
@@ -1938,12 +1948,29 @@ button:hover {
   padding: 1rem 1.1rem;
 }
 
+.payslip-details-grid {
+  padding-top: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .payslip-kv {
   border: 1px solid #edf1f6;
   border-radius: 12px;
   padding: 0.85rem 0.9rem;
   display: grid;
   gap: 0.25rem;
+}
+
+.payslip-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: #2b3e52;
+}
+
+.payslip-detail-row span {
+  color: var(--muted);
 }
 
 .payslip-kv-label {
@@ -2031,7 +2058,8 @@ button:hover {
 
 @media (max-width: 720px) {
   .payslip-sheet-grid,
-  .payslip-split {
+  .payslip-split,
+  .payslip-details-grid {
     grid-template-columns: 1fr;
   }
 
@@ -6058,5 +6086,63 @@ button:hover {
 @media (max-width: 900px) {
   .employee-page .panel {
     padding: 1.25rem 1.25rem;
+  }
+}
+
+/* Profile Logo Editor */
+.profile-avatar.profile-avatar-image {
+  background: #fff;
+  border: 1px solid #e7eef6;
+  padding: 6px;
+}
+
+.profile-avatar.profile-avatar-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.profile-logo-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.profile-logo-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.profile-logo-actions {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.profile-logo-actions input[type="file"] {
+  border: 1px dashed #cfd9e6;
+  border-radius: 10px;
+  padding: 0.7rem;
+  background: #f8fbff;
+}
+
+.profile-logo-url {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+}
+
+.profile-logo-url input {
+  min-width: 0;
+}
+
+.profile-logo-status {
+  font-size: 0.85rem;
+  color: var(--success);
+}
+
+@media (max-width: 720px) {
+  .profile-logo-url {
+    grid-template-columns: 1fr;
   }
 }

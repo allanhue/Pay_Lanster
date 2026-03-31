@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import ModuleActions from "@/app/components/ModuleActions";
 import { readSession, type UserSession } from "@/app/lib/session";
+import { clearOrgLogo, getOrgLogo, setOrgLogo } from "@/app/lib/orgAssets";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -15,6 +16,9 @@ export default function ProfilePage() {
   const [timezone, setTimezone] = useState("Africa/Nairobi");
   const [signature, setSignature] = useState("");
   const [status, setStatus] = useState("");
+  const [orgLogo, setOrgLogoState] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoStatus, setLogoStatus] = useState("");
 
   useEffect(() => {
     const current = readSession();
@@ -25,6 +29,13 @@ export default function ProfilePage() {
     setSession(current);
     setDisplayName(current.name || "");
     setSignature(`Best regards,\n${current.name || "Payroll Admin"}`);
+    if (current.orgId) {
+      const storedLogo = getOrgLogo(current.orgId);
+      if (storedLogo) {
+        setOrgLogoState(storedLogo);
+        setLogoUrl(storedLogo.startsWith("data:") ? "" : storedLogo);
+      }
+    }
   }, [router]);
 
   const onSave = (e: FormEvent) => {
@@ -44,6 +55,47 @@ export default function ProfilePage() {
     .toUpperCase();
 
   const roleLabel = session.role === "system_admin" ? "System Owner" : "Organization Admin";
+  const orgInitials = (session.orgName || session.name)
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+
+  const onLogoFile = (file: File | null) => {
+    if (!file || !session.orgId) return;
+    if (!file.type.startsWith("image/")) {
+      setLogoStatus("Please select an image file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      if (!result) return;
+      setOrgLogo(session.orgId!, result);
+      setOrgLogoState(result);
+      setLogoUrl("");
+      setLogoStatus("Organization logo updated.");
+      setTimeout(() => setLogoStatus(""), 2000);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onLogoUrlSave = () => {
+    if (!session.orgId || !logoUrl.trim()) return;
+    setOrgLogo(session.orgId, logoUrl.trim());
+    setOrgLogoState(logoUrl.trim());
+    setLogoStatus("Organization logo updated.");
+    setTimeout(() => setLogoStatus(""), 2000);
+  };
+
+  const onLogoClear = () => {
+    if (!session.orgId) return;
+    clearOrgLogo(session.orgId);
+    setOrgLogoState(null);
+    setLogoUrl("");
+    setLogoStatus("Logo removed.");
+    setTimeout(() => setLogoStatus(""), 2000);
+  };
 
   return (
     <main className="page-shell">
@@ -63,7 +115,13 @@ export default function ProfilePage() {
 
           {/* Identity card */}
           <article className="panel panel-elevated profile-card">
-            <div className="profile-avatar">{initials}</div>
+            <div className={`profile-avatar ${orgLogo ? "profile-avatar-image" : ""}`}>
+              {orgLogo ? (
+                <img src={orgLogo} alt={`${session.orgName ?? "Organization"} logo`} />
+              ) : (
+                <span>{orgInitials}</span>
+              )}
+            </div>
             <div className="profile-meta">
               <h2>{session.name}</h2>
               <p>{roleLabel}</p>
@@ -111,6 +169,36 @@ export default function ProfilePage() {
             </div>
 
             <form className="profile-form" onSubmit={onSave}>
+              <div className="panel-note profile-logo-panel">
+                <div>
+                  <div className="profile-logo-title">Organization Logo</div>
+                  <p className="muted-text">Used on payslips and PDF exports.</p>
+                </div>
+                <div className="profile-logo-actions">
+                  <input
+                    id="profileLogo"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => onLogoFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div className="profile-logo-url">
+                    <input
+                      type="url"
+                      placeholder="Paste logo URL"
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                    />
+                    <button type="button" className="btn btn-secondary" onClick={onLogoUrlSave}>
+                      Use URL
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={onLogoClear}>
+                      Remove
+                    </button>
+                  </div>
+                  {logoStatus && <span className="profile-logo-status">{logoStatus}</span>}
+                </div>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="profileName">Display Name</label>
                 <input
