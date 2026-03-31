@@ -10,6 +10,11 @@ type ModuleActionsProps = {
 
 export default function ModuleActions({ onArrange, onDelete, ariaLabel = "Module actions" }: ModuleActionsProps) {
   const [open, setOpen] = useState(false);
+  const hasActions = Boolean(onArrange || onDelete);
+
+  if (!hasActions) {
+    return null;
+  }
 
   return (
     <div className="module-actions">
@@ -29,26 +34,30 @@ export default function ModuleActions({ onArrange, onDelete, ariaLabel = "Module
         <>
           <button className="popover-backdrop" type="button" onClick={() => setOpen(false)} />
           <div className="module-actions-menu">
-            <button
-              type="button"
-              className="module-actions-item"
-              onClick={() => {
-                onArrange?.();
-                setOpen(false);
-              }}
-            >
-              Arrange
-            </button>
-            <button
-              type="button"
-              className="module-actions-item danger"
-              onClick={() => {
-                onDelete?.();
-                setOpen(false);
-              }}
-            >
-              Delete form
-            </button>
+            {onArrange && (
+              <button
+                type="button"
+                className="module-actions-item"
+                onClick={() => {
+                  onArrange();
+                  setOpen(false);
+                }}
+              >
+                Arrange
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                className="module-actions-item danger"
+                onClick={() => {
+                  onDelete();
+                  setOpen(false);
+                }}
+              >
+                Delete form
+              </button>
+            )}
           </div>
         </>
       )}

@@ -7,66 +7,67 @@ import ModuleActions from "@/app/components/ModuleActions";
 import { api, type Benefit } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
+const FREQUENCIES: Benefit["frequency"][] = ["Monthly", "One-time", "Annual"];
+const STATUSES: Benefit["status"][] = ["active", "paused"];
+
+const defaultForm = {
+  name: "",
+  amount: "",
+  frequency: "Monthly" as Benefit["frequency"],
+  taxable: true,
+  status: "active" as Benefit["status"],
+  effectiveDate: "",
+};
+
 export default function BenefitsAndAllowancesPage() {
+  const router = useRouter();
   const [session, setSession] = useState<UserSession | null>(null);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [frequency, setFrequency] = useState<Benefit["frequency"]>("Monthly");
-  const [taxable, setTaxable] = useState(true);
-  const [status, setStatus] = useState<Benefit["status"]>("active");
-  const [effectiveDate, setEffectiveDate] = useState("");
+  const [form, setForm] = useState(defaultForm);
   const [adding, setAdding] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const router = useRouter();
+  const [showReport, setShowReport] = useState(false);
 
-  const summary = useMemo(() => ({
-    total: benefits.length,
-    active: benefits.filter((benefit) => benefit.status === "active").length,
-    paused: benefits.filter((benefit) => benefit.status === "paused").length,
-  }), [benefits]);
+  const summary = useMemo(
+    () => ({
+      total: benefits.length,
+      active: benefits.filter((b) => b.status === "active").length,
+      paused: benefits.filter((b) => b.status === "paused").length,
+    }),
+    [benefits]
+  );
 
   useEffect(() => {
     const current = readSession();
-    if (!current) {
-      router.replace("/auth/login");
-      return;
-    }
-    if (current.role !== "org_admin") {
-      router.replace("/system_admin/Dasboard");
-      return;
-    }
+    if (!current) { router.replace("/auth/login"); return; }
+    if (current.role !== "org_admin") { router.replace("/system_admin/Dashboard"); return; }
     setSession(current);
     if (current.orgId) {
       api.listBenefits(current.orgId)
         .then((data) => setBenefits(Array.isArray(data) ? data : []))
         .catch(() => setBenefits([]));
-    } else {
-      setBenefits([]);
     }
   }, [router]);
 
-  const handleAdd = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!session?.orgId || !name || !amount) return;
-    setAdding(true);
+  const setField = <K extends keyof typeof defaultForm>(key: K, value: typeof defaultForm[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
+  const handleAdd = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!session?.orgId || !form.name || !form.amount) return;
+    setAdding(true);
     try {
       const created = await api.createBenefit({
         orgId: session.orgId,
-        name,
-        amount: Number(amount),
-        frequency,
-        taxable,
-        status,
-        effectiveDate: effectiveDate || new Date().toISOString().slice(0, 10),
+        name: form.name,
+        amount: Number(form.amount),
+        frequency: form.frequency,
+        taxable: form.taxable,
+        status: form.status,
+        effectiveDate: form.effectiveDate || new Date().toISOString().slice(0, 10),
       });
       setBenefits((prev) => [created, ...prev]);
-      setName("");
-      setAmount("");
-      setTaxable(true);
-      setStatus("active");
-      setEffectiveDate("");
+      setForm(defaultForm);
     } finally {
       setAdding(false);
     }
@@ -76,20 +77,21 @@ export default function BenefitsAndAllowancesPage() {
     if (!session?.orgId) return;
     try {
       await api.deleteBenefit(session.orgId, id);
-      setBenefits((prev) => prev.filter((item) => item.id !== id));
+      setBenefits((prev) => prev.filter((b) => b.id !== id));
     } catch {
-      // ignore for now
+      // handle silently
     }
   };
 
-  if (!session) {
-    return <main className="centered">Loading...</main>;
-  }
+  if (!session) return <main className="centered">Loading…</main>;
 
   return (
     <main className="page-shell">
       <Navbar session={session} />
+
       <section className="content content-wide">
+
+        {/* Header */}
         <div className="page-header">
           <div className="page-header-content">
             <h1>Benefits & Allowances</h1>
@@ -98,6 +100,7 @@ export default function BenefitsAndAllowancesPage() {
           <ModuleActions />
         </div>
 
+        {/* Summary chips */}
         <div className="benefit-summary">
           <div className="summary-chip">
             <span>Total</span>
@@ -113,157 +116,224 @@ export default function BenefitsAndAllowancesPage() {
           </div>
         </div>
 
-        <div className="benefits-grid">
-          <article className="panel panel-elevated benefit-form-panel">
-            <div className="panel-header">
-              <h2>Configure Allowance</h2>
-              <p>Create new perks and define payroll rules.</p>
-            </div>
-            <form className="form-grid benefit-form" onSubmit={handleAdd}>
-              <div className="form-group">
-                <label htmlFor="benefit-name">Benefit name</label>
-                <input
-                  id="benefit-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., Learning stipend"
-                  required
-                />
+        <div className="benefit-toggle-row">
+          <button
+            className={`btn ${showReport ? "btn-secondary" : "btn-primary"}`}
+            type="button"
+            onClick={() => setShowReport(false)}
+          >
+            Add Benefit
+          </button>
+          <button
+            className={`btn ${showReport ? "btn-primary" : "btn-secondary"}`}
+            type="button"
+            onClick={() => setShowReport(true)}
+          >
+            View Report
+          </button>
+        </div>
+
+        <div className="benefits-stack">
+          {!showReport && (
+            <article className="panel panel-elevated benefit-form-panel">
+              <div className="panel-header">
+                <h2>Configure Allowance</h2>
+                <p>Create new perks and define payroll rules.</p>
               </div>
 
-              <div className="form-group form-two-col">
+              <form className="benefit-form" onSubmit={handleAdd}>
                 <div className="form-group">
-                  <label htmlFor="benefit-amount">Amount</label>
+                  <label htmlFor="benefit-name">Benefit name</label>
                   <input
-                    id="benefit-amount"
-                    type="number"
-                    min={0}
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter amount"
+                    id="benefit-name"
+                    value={form.name}
+                    onChange={(e) => setField("name", e.target.value)}
+                    placeholder="e.g. Learning stipend"
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="benefit-frequency">Frequency</label>
-                  <select
-                    id="benefit-frequency"
-                    value={frequency}
-                    onChange={(e) => setFrequency(e.target.value as Benefit["frequency"])}
-                  >
-                    <option value="Monthly">Monthly</option>
-                    <option value="One-time">One-time</option>
-                    <option value="Annual">Annual</option>
-                  </select>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="benefit-amount">Amount</label>
+                    <input
+                      id="benefit-amount"
+                      type="number"
+                      min={0}
+                      value={form.amount}
+                      onChange={(e) => setField("amount", e.target.value)}
+                      placeholder="Enter amount"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="benefit-frequency">Frequency</label>
+                    <select
+                      id="benefit-frequency"
+                      value={form.frequency}
+                      onChange={(e) => setField("frequency", e.target.value as Benefit["frequency"])}
+                    >
+                      {FREQUENCIES.map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              <div className="form-group form-two-col">
-                <div className="form-group">
-                  <label htmlFor="benefit-status">Status</label>
-                  <select id="benefit-status" value={status} onChange={(e) => setStatus(e.target.value as Benefit["status"])}>
-                    <option value="active">Active</option>
-                    <option value="paused">Paused</option>
-                  </select>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="benefit-status">Status</label>
+                    <select
+                      id="benefit-status"
+                      value={form.status}
+                      onChange={(e) => setField("status", e.target.value as Benefit["status"])}
+                    >
+                      {STATUSES.map((s) => (
+                        <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="benefit-effective">Effective Date</label>
+                    <input
+                      id="benefit-effective"
+                      type="date"
+                      value={form.effectiveDate}
+                      onChange={(e) => setField("effectiveDate", e.target.value)}
+                    />
+                  </div>
                 </div>
+
                 <div className="form-group">
-                  <label htmlFor="benefit-effective">Effective Date</label>
-                  <input
-                    id="benefit-effective"
-                    type="date"
-                    value={effectiveDate}
-                    onChange={(e) => setEffectiveDate(e.target.value)}
-                  />
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={form.taxable}
+                      onChange={(e) => setField("taxable", e.target.checked)}
+                    />
+                    <span className="checkbox-text">Taxable benefit (included in PAYE)</span>
+                  </label>
                 </div>
+
+                <div className="form-actions">
+                  <button className="btn btn-secondary" type="button" onClick={() => setForm(defaultForm)}>
+                    Reset
+                  </button>
+                  <button className={`btn btn-primary${adding ? " btn-loading" : ""}`} disabled={adding} type="submit">
+                    {adding && <span className="btn-spinner" />}
+                    {adding ? "Adding..." : "Add benefit"}
+                  </button>
+                </div>
+              </form>
+            </article>
+          )}
+
+          {showReport && (
+            <article className="panel panel-elevated benefit-table-panel">
+              <div className="panel-header">
+                <h2>Configured Perks</h2>
+                <p>Review your active and paused benefits.</p>
               </div>
 
-              <div className="form-group checkbox-row">
-                <label className="checkbox-label">
-                  <input type="checkbox" checked={taxable} onChange={(e) => setTaxable(e.target.checked)} />
-                  <span className="checkbox-text">Taxable benefit (included in PAYE)</span>
-                </label>
-              </div>
-
-              <div className="form-actions">
-                <button className="btn btn-secondary" type="button" onClick={() => { setName(""); setAmount(""); }}>
-                  Reset
-                </button>
-                <button className={`btn btn-primary ${adding ? "btn-loading" : ""}`} disabled={adding} type="submit">
-                  {adding && <span className="btn-spinner" />}
-                  {adding ? "Adding..." : "Add benefit"}
-                </button>
-              </div>
-            </form>
-          </article>
-
-          <article className="panel panel-elevated benefit-table-panel">
-            <div className="panel-header">
-              <h2>Configured Perks</h2>
-              <p>Review your active and paused benefits.</p>
-            </div>
-            <table className="data-table benefit-table">
-              <thead>
-                <tr>
-                  <th>Benefit</th>
-                  <th>Amount</th>
-                  <th>Frequency</th>
-                  <th>Taxable</th>
-                  <th>Status</th>
-                  <th>Effective</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {benefits.map((benefit) => (
-                  <tr key={benefit.id}>
-                    <td>{benefit.name}</td>
-                    <td>
-                      {benefit.amount.toLocaleString(undefined, {
-                        style: "currency",
-                        currency: "USD",
-                      })}
-                    </td>
-                    <td>{benefit.frequency}</td>
-                    <td>{benefit.taxable ? "Yes" : "No"}</td>
-                    <td>
-                      <span className={`status-badge status-${benefit.status}`}>{benefit.status}</span>
-                    </td>
-                    <td>{benefit.effectiveDate || "-"}</td>
-                    <td className="action-cell">
-                      <button
-                        className="action-menu-btn"
-                        type="button"
-                        onClick={() => setActiveMenu(activeMenu === benefit.id ? null : benefit.id)}
-                        aria-label="Benefit actions"
-                      >
-                        <svg viewBox="0 0 24 24">
-                          <circle cx="12" cy="5" r="1.6" fill="currentColor" />
-                          <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-                          <circle cx="12" cy="19" r="1.6" fill="currentColor" />
-                        </svg>
-                      </button>
-                      {activeMenu === benefit.id && (
-                        <>
-                          <button className="popover-backdrop" type="button" onClick={() => setActiveMenu(null)} />
-                          <div className="action-popover">
+              {benefits.length === 0 ? (
+                <div className="table-empty">
+                  <BenefitEmptyIcon />
+                  <p className="table-empty-title">No benefits configured</p>
+                  <p className="table-empty-desc">Add your first benefit using the form.</p>
+                </div>
+              ) : (
+                <div className="table-scroll">
+                  <table className="data-table benefit-table">
+                    <thead>
+                      <tr>
+                        <th>Benefit</th>
+                        <th>Amount</th>
+                        <th>Frequency</th>
+                        <th>Taxable</th>
+                        <th>Status</th>
+                        <th>Effective</th>
+                        <th aria-label="Actions" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {benefits.map((benefit) => (
+                        <tr key={benefit.id}>
+                          <td>{benefit.name}</td>
+                          <td>
+                            {benefit.amount.toLocaleString(undefined, {
+                              style: "currency",
+                              currency: "KES",
+                            })}
+                          </td>
+                          <td>{benefit.frequency}</td>
+                          <td>{benefit.taxable ? "Yes" : "No"}</td>
+                          <td>
+                            <span className={`status-badge status-${benefit.status}`}>
+                              {benefit.status}
+                            </span>
+                          </td>
+                          <td>{benefit.effectiveDate || "-"}</td>
+                          <td className="action-cell">
                             <button
-                              className="action-popover-item danger"
+                              aria-label="Benefit actions"
+                              className="action-menu-btn"
+                              onClick={() => setActiveMenu(activeMenu === benefit.id ? null : benefit.id)}
                               type="button"
-                              onClick={() => { removeBenefit(benefit.id); setActiveMenu(null); }}
                             >
-                              Delete
+                              <DotsIcon />
                             </button>
-                          </div>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </article>
+                            {activeMenu === benefit.id && (
+                              <>
+                                <button
+                                  aria-label="Close menu"
+                                  className="popover-backdrop"
+                                  onClick={() => setActiveMenu(null)}
+                                  type="button"
+                                />
+                                <div className="action-popover">
+                                  <button
+                                    className="action-popover-item danger"
+                                    onClick={() => { removeBenefit(benefit.id); setActiveMenu(null); }}
+                                    type="button"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </article>
+          )}
         </div>
       </section>
     </main>
+  );
+}
+
+
+function DotsIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="12" cy="5" fill="currentColor" r="1.6" />
+      <circle cx="12" cy="12" fill="currentColor" r="1.6" />
+      <circle cx="12" cy="19" fill="currentColor" r="1.6" />
+    </svg>
+  );
+}
+
+function BenefitEmptyIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 48 48">
+      <rect x="8" y="12" width="32" height="28" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M16 12v-2a8 8 0 0116 0v2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="18" y1="24" x2="30" y2="24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="18" y1="30" x2="26" y2="30" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }

@@ -15,6 +15,7 @@ export default function PayslipsPage() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPayrun, setSelectedPayrun] = useState("latest");
+  const [approvalFilter, setApprovalFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
   const [emailStatus, setEmailStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const router = useRouter();
@@ -88,9 +89,11 @@ export default function PayslipsPage() {
           : selectedPayrun === "latest"
             ? latestPeriod === "" || slip.period === latestPeriod
             : slip.period === selectedPayrun;
-      return matchesSearch && matchesPeriod && slip.approval === "approved";
+      const matchesApproval =
+        approvalFilter === "all" ? true : slip.approval === approvalFilter;
+      return matchesSearch && matchesPeriod && matchesApproval;
     });
-  }, [payslips, searchQuery, selectedPayrun, latestPeriod]);
+  }, [payslips, searchQuery, selectedPayrun, latestPeriod, approvalFilter]);
 
   const removePayslip = (id: string) => {
     setPayslips((prev) => prev.filter((item) => item.id !== id));
@@ -183,7 +186,7 @@ export default function PayslipsPage() {
           <div className="page-header">
             <div className="page-header-content">
               <h1>Payslips</h1>
-              <p>Review, print (PDF), and email approved payslips. Payslips appear after payruns are approved.</p>
+              <p>Review, print (PDF), and email payslips by status. Payslips appear after payruns are approved.</p>
             </div>
             <ModuleActions />
           </div>
@@ -233,6 +236,19 @@ export default function PayslipsPage() {
                   ))}
                 </select>
               </div>
+              <div className="form-group">
+                <label htmlFor="payslipApproval">Approval</label>
+                <select
+                  id="payslipApproval"
+                  value={approvalFilter}
+                  onChange={(event) => setApprovalFilter(event.target.value as typeof approvalFilter)}
+                >
+                  <option value="all">All statuses</option>
+                  <option value="approved">Approved</option>
+                  <option value="pending">Pending</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
             </div>
             <table className="data-table">
               <thead>
@@ -243,6 +259,7 @@ export default function PayslipsPage() {
                   <th>Gross</th>
                   <th>Deductions</th>
                   <th>Net</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -260,6 +277,11 @@ export default function PayslipsPage() {
                     <td>${money(item.gross)}</td>
                     <td>${money(item.deductions)}</td>
                     <td><strong>${money(item.net)}</strong></td>
+                    <td>
+                      <span className={`status-badge status-${item.approval}`}>
+                        {item.approval}
+                      </span>
+                    </td>
                     <td className="action-cell">
                       <button
                         className="action-menu-btn"

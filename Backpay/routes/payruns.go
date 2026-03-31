@@ -151,6 +151,7 @@ func (a *App) createPayrun(w http.ResponseWriter, r *http.Request) {
 			"Payroll",
 		)
 
+		_ = a.generatePayslipsForPayrun(req)
 		writeJSON(w, http.StatusCreated, req)
 		return
 	}
@@ -159,5 +160,126 @@ func (a *App) createPayrun(w http.ResponseWriter, r *http.Request) {
 	req.ID = a.nextID("pr")
 	a.payruns[req.OrgID] = append([]Payrun{req}, a.payruns[req.OrgID]...)
 	a.mu.Unlock()
+	_ = a.generatePayslipsForPayrun(req)
 	writeJSON(w, http.StatusCreated, req)
+}
+
+func (a *App) generatePayslipsForPayrun(payrun Payrun) error {
+	orgID := strings.TrimSpace(payrun.OrgID)
+	if orgID == "" || strings.TrimSpace(payrun.Period) == "" {
+		return nil
+	}
+
+	if a.db != nil {
+		rows, err := a.db.Query(
+			`SELECT full_name,
+         COALESCE(email, ''),
+         salary,
+         COALESCE(pay_cycle, 'monthly'),
+         COALESCE(status, 'active')
+       FROM employees
+       WHERE org_id = $1`,
+			orgID,
+		)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var name, email, payCycle, status string
+			var salary float64
+			if err := rows.Scan(&name, &email, &salary, &payCycle, &status); err != nil {
+				return err
+			}
+			if strings.TrimSpace(name) == "" {
+				continue
+			}
+			if status != "" && status != "active" {
+				continue
+			}
+			var gross float64
+			if strings.ToLower(payCycle) == "biweekly" {
+				gross = salary / 26
+			} else {
+				gross = salary / 12
+			}
+			deductions := gross * 0.18
+			net := gross - deductions
+
+			var exists string
+			err := a.db.QueryRow(
+				`SELECT id FROM payslips WHERE org_id = $1 AND employee_name = $2 AND period = $3 LIMIT 1`,
+				orgID,
+				name,
+				payrun.Period,
+			).Scan(&exists)
+			if err == nil && exists != "" {
+				continue
+			}
+
+			payslipID := a.nextID("ps")
+			_, _ = a.db.Exec(
+				`INSERT INTO payslips (
+         id, org_id, employee_name, employee_email, period, gross_pay, deductions, net_pay, approval_status
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+				payslipID,
+				orgID,
+				name,
+				sql.NullString{String: email, Valid: email != ""},
+				payrun.Period,
+				gross,
+				deductions,
+				net,
+				"approved",
+			)
+		}
+		return rows.Err()
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	employees := a.employees[orgID]
+	if len(employees) == 0 {
+		return nil
+	}
+	existing := a.payslips[orgID]
+	for _, emp := range employees {
+		if emp.FullName == "" {
+			continue
+		}
+		if emp.Status != "" && emp.Status != "active" {
+			continue
+		}
+		duplicate := false
+		for _, slip := range existing {
+			if slip.Employee == emp.FullName && slip.Period == payrun.Period {
+				duplicate = true
+				break
+			}
+		}
+		if duplicate {
+			continue
+		}
+		gross := emp.Salary / 12
+		if strings.ToLower(emp.PayCycle) == "biweekly" {
+			gross = emp.Salary / 26
+		}
+		deductions := gross * 0.18
+		net := gross - deductions
+		payslip := Payslip{
+			ID:        a.nextID("ps"),
+			OrgID:     orgID,
+			Employee:  emp.FullName,
+			Email:     emp.Email,
+			Period:    payrun.Period,
+			Gross:     gross,
+			Deductions: deductions,
+			Net:       net,
+			Approval:  "approved",
+		}
+		existing = append([]Payslip{payslip}, existing...)
+	}
+	a.payslips[orgID] = existing
+	return nil
 }

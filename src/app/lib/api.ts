@@ -44,7 +44,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       return (await response.json()) as T;
     } catch (err: any) {
       if (err?.name === "AbortError") {
-        throw new Error("Request timed out. Check backend availability.");
+        throw new Error("Request timed out.");
       }
       throw err;
     } finally {

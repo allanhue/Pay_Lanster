@@ -3239,6 +3239,13 @@ button:hover {
   z-index: 40;
   border: none;
   padding: 0;
+  opacity: 0;
+  cursor: default;
+}
+
+.popover-backdrop:hover,
+.popover-backdrop:active {
+  background: transparent;
 }
 
 /* Enhanced Empty State */
@@ -4996,5 +5003,1060 @@ button:hover {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE PATCHES — appended after globals.css
+   Fixes: Profile, Benefits & Allowances, Loans, Calendar
+   ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ─── Shared: form-row (two-column form pair) ────────────────────────────── */
+/* Replaces the old form-two-col pattern used across all pages */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
 
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Shared: panel-footer (replaces modal-actions inside panels) ────────── */
+.panel-footer {
+  display: flex;
+  gap: 0.65rem;
+  padding: 1rem 1rem 1rem;
+  border-top: 1px solid var(--line);
+  margin-top: 0.25rem;
+}
+
+/* ─── Shared: detail-list (wraps detail-rows inside panels) ─────────────── */
+.detail-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-list .detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #f0f4f8;
+  gap: 1rem;
+}
+
+.detail-list .detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-list .detail-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  min-width: unset;
+}
+
+.detail-list .detail-value {
+  font-size: 0.875rem;
+  color: var(--text);
+  text-align: right;
+  word-break: break-all;
+  flex: 1;
+}
+
+/* ─── Shared: table-empty state ──────────────────────────────────────────── */
+.table-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  gap: 0.5rem;
+}
+
+.table-empty svg {
+  width: 3rem;
+  height: 3rem;
+  color: #c8d5e0;
+  margin-bottom: 0.5rem;
+}
+
+.table-empty-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.table-empty-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ─── Shared: table-scroll wrapper ──────────────────────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── Shared: modal-form (form inside modals) ────────────────────────────── */
+.modal-form {
+  display: grid;
+  gap: 1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFILE PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Override the global .profile-grid — 3-zone layout:
+   [avatar card] [account details]
+   [edit form — full width]         */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+  align-items: start;
+  /* reset any max-height from global */
+  max-height: unset;
+  overflow: unset;
+}
+
+/* Avatar card — top-left */
+.profile-card {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+  padding: 0 0 1.25rem;
+  overflow: hidden;
+  /* reset the global flex-row layout */
+  flex-direction: column !important;
+}
+
+/* Coloured banner behind avatar */
+.profile-card::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 64px;
+  background: linear-gradient(135deg, var(--brand-strong), var(--brand));
+  flex-shrink: 0;
+}
+
+/* Override global .profile-avatar */
+.profile-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50% !important;
+  background: #e0f0f4 !important;
+  color: var(--brand-strong) !important;
+  font-size: 1.35rem !important;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  margin-top: -34px;
+  position: relative;
+  z-index: 1;
+  /* reset the gradient from global */
+  background: #e0f0f4 !important;
+}
+
+.profile-meta {
+  margin-top: 0.85rem;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.profile-meta h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.15rem;
+}
+
+.profile-meta p {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0 0 0.65rem;
+}
+
+/* Account details panel — top-right */
+.profile-grid > article:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* Edit form panel — full width second row */
+.profile-form-panel {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+/* Profile form layout */
+.profile-form {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0 1rem 1rem;
+}
+
+/* Panel header padding consistency */
+.panel-header {
+  padding: 1rem 1rem 0.75rem;
+  margin-bottom: 0;
+}
+
+@media (max-width: 860px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-card,
+  .profile-grid > article:nth-child(2),
+  .profile-form-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .profile-card {
+    flex-direction: row !important;
+    align-items: center;
+    text-align: left;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .profile-card::before {
+    display: none;
+  }
+
+  .profile-avatar {
+    margin-top: 0;
+    flex-shrink: 0;
+  }
+
+  .profile-meta {
+    align-items: flex-start;
+    padding: 0;
+    margin-top: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BENEFITS & ALLOWANCES PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Summary chips row */
+.benefit-summary {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0 1.1rem;
+}
+
+.benefit-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.benefits-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.benefit-summary .summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: #eef5f7;
+  border: 1px solid #cde0e5;
+  color: #264b5a;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.benefit-summary .summary-chip span {
+  color: var(--muted);
+}
+
+.benefit-summary .summary-chip strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Two-column layout: form left, table right */
+.benefits-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Sticky form panel */
+.benefit-form-panel {
+  position: sticky;
+  top: 5rem;
+}
+
+/* Form inside the benefit panel */
+.benefit-form {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0 1rem 1rem;
+}
+
+.benefit-form input,
+.benefit-form select,
+.benefit-form textarea {
+  width: 100%;
+  min-height: 40px;
+}
+
+.benefit-form textarea {
+  min-height: 90px;
+}
+
+/* Checkbox row override */
+.benefit-form .form-group:has(.checkbox-label) {
+  flex-direction: row;
+  align-items: center;
+}
+
+.benefit-form .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text);
+  /* reset the global font-weight: 600 from .form-group label */
+  font-weight: 400 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+.benefit-form .checkbox-label input[type="checkbox"] {
+  width: 16px;
+  min-height: unset;
+  height: 16px;
+  flex-shrink: 0;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--brand);
+}
+
+/* Benefit table panel */
+.benefit-table-panel {
+  /* ensure panel doesn't collapse */
+  min-height: 200px;
+}
+
+/* Status active badge override for benefits */
+.benefit-table-panel .status-active {
+  background: #e8f4f0;
+  color: var(--success);
+}
+
+@media (max-width: 960px) {
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-form-panel {
+    position: static;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOANS PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* page-header-actions: Add Loan button + ModuleActions side by side */
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Modal form two-column grid */
+.modal-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Spacer div in modal form (last row alignment) */
+.modal-form .form-row > [aria-hidden="true"] {
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .modal-form .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-form .form-row > [aria-hidden="true"] {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALENDAR PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Controls bar at top of calendar */
+.calendar-controls-panel {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  margin-top: 0;
+  gap: 1rem;
+  /* override .panel which sets display:grid */
+  display: flex !important;
+}
+
+.calendar-controls-panel .calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.calendar-month-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 160px;
+  text-align: center;
+  margin: 0;
+}
+
+.calendar-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Calendar + sidebar layout */
+.calendar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: start;
+}
+
+.calendar-grid-panel {
+  /* override .panel gap */
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Weekday header */
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #fafbfc;
+  border-bottom: 1px solid var(--line);
+}
+
+.calendar-weekday {
+  padding: 0.6rem 0.4rem;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Day cells */
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--line);
+}
+
+.calendar-day {
+  background: var(--surface);
+  min-height: 76px;
+  padding: 0.4rem 0.45rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.calendar-day:hover.has-date {
+  background: #f4fafc;
+}
+
+.calendar-day.today {
+  background: #e8f4f7;
+}
+
+.calendar-day.today .calendar-date-number {
+  background: var(--brand);
+  color: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+}
+
+.calendar-day.selected {
+  background: #f0fbff;
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+.calendar-day.empty {
+  background: #fafbfc;
+  cursor: default;
+}
+
+.calendar-date-number {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+}
+
+.calendar-event-dots {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.calendar-event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Sidebar panels */
+.calendar-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Event list (today / upcoming) */
+.event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.85rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.event-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #edf2f7;
+  border-radius: 10px;
+  background: #fff;
+  transition: box-shadow 0.15s;
+}
+
+.event-list-item:hover {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
+}
+
+.event-list-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.event-list-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.event-list-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-list-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-list-meta {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.event-list-meta span {
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: #f4f7fb;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+
+/* All events table filter row */
+.panel-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0;
+}
+
+.panel-header-row h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1.05rem;
+}
+
+.panel-header-row p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+/* Search field with icon */
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-field svg {
+  position: absolute;
+  left: 0.65rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.search-field input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem 0.5rem 2.1rem;
+  font-size: 0.875rem;
+  background: #fff;
+  min-height: unset;
+  height: 36px;
+  outline: none;
+  width: 200px;
+  font-family: inherit;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-field input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(0, 124, 145, 0.08);
+}
+
+.filter-row select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 0.75rem;
+  height: 36px;
+  font-size: 0.875rem;
+  background: #fff;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+}
+
+/* Event cell in table */
+.event-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.event-type-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.event-type-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.event-cell-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.2rem;
+}
+
+.event-cell-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Event icon colour variants (applies to both dot, list icon, cell icon) */
+.event-payroll  { background-color: var(--brand); }
+.event-holiday  { background-color: var(--success); }
+.event-meeting  { background-color: #0c4a85; }
+.event-deadline { background-color: var(--danger); }
+.event-reminder { background-color: #944400; }
+
+/* Status for calendar events */
+.status-upcoming  { background: #f0f4ff; color: #4338ca; }
+.status-completed { background: #e8f4f7; color: #0b5c2f; }
+.status-cancelled { background: #ecefef; color: #2b3e52; }
+
+@media (max-width: 1024px) {
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-sidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .calendar-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-day {
+    min-height: 56px;
+    padding: 0.3rem;
+  }
+
+  .calendar-controls-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-nav {
+    justify-content: center;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFILE + BENEFITS POLISH
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Profile: make the identity card feel more premium and readable */
+.profile-card {
+  border: 1px solid #e3edf5;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.profile-meta .status-badge {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Profile details: stack labels on small screens for long values */
+@media (max-width: 640px) {
+  .detail-list .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detail-list .detail-value {
+    text-align: left;
+    word-break: break-word;
+  }
+}
+
+/* Benefits: improve numeric scanability and compactness */
+.benefit-table th:nth-child(2),
+.benefit-table td:nth-child(2) {
+  text-align: right;
+}
+
+.benefit-table th:nth-child(3),
+.benefit-table td:nth-child(3),
+.benefit-table th:nth-child(4),
+.benefit-table td:nth-child(4) {
+  text-align: center;
+}
+
+.benefit-summary .summary-chip {
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+@media (max-width: 720px) {
+  .benefit-summary {
+    gap: 0.5rem;
+  }
+
+  .benefit-summary .summary-chip {
+    font-size: 0.78rem;
+  }
+
+  .benefit-table {
+    font-size: 0.85rem;
+  }
+
+  .benefit-table th,
+  .benefit-table td {
+    padding: 0.55rem 0.4rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BENEFITS & ALLOWANCES – LAYOUT REFINES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.benefit-toggle-row {
+  margin-top: 0.25rem;
+}
+
+.benefits-stack .panel {
+  margin-top: 0;
+}
+
+.benefit-form-panel .panel-header,
+.benefit-table-panel .panel-header {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.benefit-form .form-group label {
+  font-size: 0.82rem;
+}
+
+.benefit-form input,
+.benefit-form select,
+.benefit-form textarea {
+  border-radius: 8px;
+  min-height: 40px;
+}
+
+.benefit-table-panel .data-table th,
+.benefit-table-panel .data-table td {
+  padding: 0.7rem 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .benefit-form-panel,
+  .benefit-table-panel {
+    padding: 1rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMPLOYEE PAGE – SPACING + FORM CONSISTENCY
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.employee-page {
+  padding: 5.8rem 2.5rem 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .employee-page {
+    padding: 5.2rem 1.25rem 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .employee-page {
+    padding: 4.8rem 1rem 1rem;
+  }
+}
+
+.employee-page .panel {
+  padding: 1.5rem 1.75rem;
+}
+
+.employee-page .data-table th,
+.employee-page .data-table td {
+  padding: 0.6rem 0.65rem !important;
+  font-size: 0.82rem;
+}
+
+.employee-form input,
+.employee-form select,
+.employee-form textarea {
+  width: 100%;
+  min-height: 40px;
+  border-radius: 8px;
+}
+
+.employee-form textarea {
+  min-height: 96px;
+}
+
+.employee-table-wrap {
+  border-radius: 8px;
+}
+
+.employee-table-compact {
+  font-size: 0.85rem;
+  min-width: 760px;
+}
+
+.employee-table-compact th {
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+
+.employee-table-compact td {
+  vertical-align: middle;
+}
+
+.employee-table-compact td:nth-child(1) {
+  max-width: 240px;
+}
+
+.employee-table-compact td:nth-child(2) {
+  max-width: 220px;
+}
+
+.employee-table-compact td:nth-child(3) {
+  max-width: 150px;
+}
+
+.employee-table-compact td:nth-child(4),
+.employee-table-compact td:nth-child(7) {
+  max-width: 120px;
+  white-space: nowrap;
+}
+
+.employee-table-compact td:nth-child(1),
+.employee-table-compact td:nth-child(2),
+.employee-table-compact td:nth-child(3) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-table-compact td:nth-child(5),
+.employee-table-compact td:nth-child(6) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.employee-table-compact td:nth-child(7) {
+  white-space: nowrap;
+}
+
+/* Detail drawer refinement */
+.detail-drawer {
+  width: min(520px, 92vw);
+}
+
+.detail-section {
+  background: #f9fbfd;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+}
+
+.detail-section h4 {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #7a889a;
+}
+
+.detail-row {
+  display: grid !important;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid #e9eef5 !important;
+}
+
+.detail-row span:last-child {
+  text-align: right;
+}
+
+.detail-row:last-child {
+  border-bottom: none !important;
+}
+
+.detail-drawer-actions {
+  background: #fafbfc;
+}
+
+@media (max-width: 720px) {
+  .detail-drawer {
+    right: 0;
+    width: 100vw;
+    border-radius: 0;
+  }
+
+  .detail-row {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-row span:last-child {
+    text-align: left;
+  }
+}
+
+@media (max-width: 900px) {
+  .employee-page .panel {
+    padding: 1.25rem 1.25rem;
+  }
+}
