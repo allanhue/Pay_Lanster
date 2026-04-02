@@ -101,6 +101,12 @@ const moduleIcons = {
       <rect x="16" y="14" width="2" height="2" fill="currentColor" />
     </svg>
   ),
+  leaves: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 10c5-4 9-4 16-4-2 6-6 10-12 12-3 1-4-2-4-3 0-2 0-4 0-5z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 14c3-1 6-4 9-7" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  ),
   advanced: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -125,6 +131,7 @@ export default function Sidebar({ session }: SidebarProps) {
     { href: "/pages/Loans", label: "Loans", icon: moduleIcons.loans },
     { href: "/pages/Benefits_and_Allowances", label: "Benefits & Allowances", icon: moduleIcons.benefits },
     { href: "/pages/Approvals", label: "Approvals", icon: moduleIcons.approvals },
+    { href: "/pages/Leaves", label: "Leaves", icon: moduleIcons.leaves },
     { href: "/pages/Payslips", label: "Payslips", icon: moduleIcons.payslips },
     { href: "/pages/Reports", label: "Reports", icon: moduleIcons.reports },
     { href: "/pages/Support", label: "Support", icon: moduleIcons.support },

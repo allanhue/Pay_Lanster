@@ -180,6 +180,37 @@ export type Payslip = {
   approval: "pending" | "approved" | "rejected";
 };
 
+export type LeaveType = {
+  id: string;
+  orgId: string;
+  code: string;
+  label: string;
+  defaultDays: number;
+  requiresDoc: boolean;
+  color: string;
+  accentColor: string;
+  status: "active" | "inactive";
+};
+
+export type LeaveRequest = {
+  id: string;
+  orgId: string;
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  typeCode: string;
+  typeLabel: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  appliedOn: string;
+  reviewedBy?: string;
+  reviewedOn?: string;
+  reviewNote?: string;
+};
+
 export type ProjectIntegrationStatus = {
   baseUrl: string;
   enabled: boolean;
@@ -343,6 +374,52 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+
+  listLeaveTypes: (orgId: string) =>
+    request<LeaveType[]>(
+      `/api/leave-types?orgId=${encodeURIComponent(orgId)}`
+    ),
+
+  createLeaveType: (body: Omit<LeaveType, "id">) =>
+    request<LeaveType>("/api/leave-types", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateLeaveType: (body: LeaveType) =>
+    request<LeaveType>("/api/leave-types", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  deleteLeaveType: (orgId: string, id: string) =>
+    request<{ deleted: boolean }>(
+      `/api/leave-types?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    ),
+
+  listLeaveRequests: (orgId: string) =>
+    request<LeaveRequest[]>(
+      `/api/leave-requests?orgId=${encodeURIComponent(orgId)}`
+    ),
+
+  createLeaveRequest: (body: Omit<LeaveRequest, "id">) =>
+    request<LeaveRequest>("/api/leave-requests", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateLeaveRequest: (body: LeaveRequest) =>
+    request<LeaveRequest>("/api/leave-requests", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
+  deleteLeaveRequest: (orgId: string, id: string) =>
+    request<{ deleted: boolean }>(
+      `/api/leave-requests?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    ),
 
   projectIntegrationStatus: () =>
     request<ProjectIntegrationStatus>("/api/integrations/project"),

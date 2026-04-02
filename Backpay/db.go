@@ -95,7 +95,7 @@ func InitSchema(db *sql.DB) error {
       hire_date DATE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
-	`CREATE TABLE IF NOT EXISTS payruns (
+		`CREATE TABLE IF NOT EXISTS payruns (
       id TEXT PRIMARY KEY,
       org_id TEXT REFERENCES organizations(id),
       period TEXT,
@@ -107,7 +107,7 @@ func InitSchema(db *sql.DB) error {
       status TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
-	`CREATE TABLE IF NOT EXISTS loans (
+		`CREATE TABLE IF NOT EXISTS loans (
       id TEXT PRIMARY KEY,
       org_id TEXT REFERENCES organizations(id),
       employee TEXT NOT NULL,
@@ -120,7 +120,7 @@ func InitSchema(db *sql.DB) error {
       status TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
-	`CREATE TABLE IF NOT EXISTS benefits (
+		`CREATE TABLE IF NOT EXISTS benefits (
       id TEXT PRIMARY KEY,
       org_id TEXT REFERENCES organizations(id),
       name TEXT NOT NULL,
@@ -142,7 +142,7 @@ func InitSchema(db *sql.DB) error {
       decided_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
-	`CREATE TABLE IF NOT EXISTS payslips (
+		`CREATE TABLE IF NOT EXISTS payslips (
       id TEXT PRIMARY KEY,
       org_id TEXT REFERENCES organizations(id),
       employee_name TEXT NOT NULL,
@@ -152,6 +152,37 @@ func InitSchema(db *sql.DB) error {
       deductions NUMERIC NOT NULL,
       net_pay NUMERIC NOT NULL,
       approval_status TEXT DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+		`CREATE TABLE IF NOT EXISTS leave_types (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      code TEXT NOT NULL,
+      label TEXT NOT NULL,
+      default_days INT DEFAULT 0,
+      requires_doc BOOLEAN DEFAULT false,
+      color TEXT,
+      accent_color TEXT,
+      status TEXT DEFAULT 'active',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+		`CREATE TABLE IF NOT EXISTS leave_requests (
+      id TEXT PRIMARY KEY,
+      org_id TEXT REFERENCES organizations(id),
+      employee_id TEXT NOT NULL,
+      employee_name TEXT NOT NULL,
+      department TEXT,
+      type_code TEXT NOT NULL,
+      type_label TEXT NOT NULL,
+      start_date DATE,
+      end_date DATE,
+      days INT,
+      reason TEXT,
+      status TEXT DEFAULT 'pending',
+      applied_on DATE,
+      reviewed_by TEXT,
+      reviewed_on DATE,
+      review_note TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
 		`CREATE TABLE IF NOT EXISTS org_settings (
@@ -196,6 +227,27 @@ func InitSchema(db *sql.DB) error {
 		`ALTER TABLE benefits ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`,
 		`ALTER TABLE benefits ADD COLUMN IF NOT EXISTS effective_date DATE`,
 		`ALTER TABLE payslips ADD COLUMN IF NOT EXISTS employee_email TEXT`,
+		`ALTER TABLE leave_types ADD COLUMN IF NOT EXISTS code TEXT`,
+		`ALTER TABLE leave_types ADD COLUMN IF NOT EXISTS label TEXT`,
+		`ALTER TABLE leave_types ADD COLUMN IF NOT EXISTS default_days INT DEFAULT 0`,
+		`ALTER TABLE leave_types ADD COLUMN IF NOT EXISTS requires_doc BOOLEAN DEFAULT false`,
+		`ALTER TABLE leave_types ADD COLUMN IF NOT EXISTS color TEXT`,
+		`ALTER TABLE leave_types ADD COLUMN IF NOT EXISTS accent_color TEXT`,
+		`ALTER TABLE leave_types ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS employee_id TEXT`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS employee_name TEXT`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS department TEXT`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS type_code TEXT`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS type_label TEXT`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS start_date DATE`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS end_date DATE`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS days INT`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS reason TEXT`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending'`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS applied_on DATE`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS reviewed_by TEXT`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS reviewed_on DATE`,
+		`ALTER TABLE leave_requests ADD COLUMN IF NOT EXISTS review_note TEXT`,
 	}
 	for _, stmt := range alterStatements {
 		if _, err := db.Exec(stmt); err != nil {

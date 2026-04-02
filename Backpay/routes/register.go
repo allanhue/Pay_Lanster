@@ -15,6 +15,8 @@ func (a *App) Register(r *gin.Engine) {
 	r.Any("/api/loans", gin.WrapF(a.loansHandler))
 	r.Any("/api/benefits", gin.WrapF(a.benefitsHandler))
 	r.Any("/api/payslips", gin.WrapF(a.payslipsHandler))
+	r.Any("/api/leave-types", gin.WrapF(a.leaveTypesHandler))
+	r.Any("/api/leave-requests", gin.WrapF(a.leaveRequestsHandler))
 	r.GET("/api/dashboard/org", gin.WrapF(a.orgDashboard))
 	r.GET("/api/dashboard/system", gin.WrapF(a.systemDashboard))
 	r.GET("/api/analytics/tenants", gin.WrapF(a.tenantAnalytics))
