@@ -64,7 +64,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch (err) {
     throw err;
   }
-} // ✅ FIX: properly closed function
+} //  FIX: properly closed function
 
 export type PayrollEmployee = {
   id: string;

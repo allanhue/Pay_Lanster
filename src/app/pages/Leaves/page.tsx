@@ -1,13 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState, useMemo } from "react";
+import React, { FormEvent, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import ModuleActions from "@/app/components/ModuleActions";
 import { api, type LeaveRequest, type LeaveType, type PayrollEmployee } from "@/app/lib/api";
 import { readSession, type UserSession } from "@/app/lib/session";
 
-// ── Types ──────────────────────────────────────────────────────────────────
 
 type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
 type LeaveBalance = {
@@ -17,7 +16,6 @@ type LeaveBalance = {
   items: { typeCode: string; label: string; entitled: number; used: number; remaining: number }[];
 };
 
-// ── Constants ──────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<LeaveStatus, { label: string; bg: string; color: string }> = {
   pending:   { label: "Pending",   bg: "rgba(245,158,11,0.1)",   color: "#b45309" },
@@ -100,7 +98,6 @@ function DetailRow({ label, value, mono = false }: { label: string; value?: stri
   );
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
 
 export default function LeavePage() {
   const [session, setSession] = useState<UserSession | null>(null);
@@ -474,7 +471,6 @@ export default function LeavePage() {
 
   if (!session) return <main className="centered">Loading…</main>;
 
-  // ── Render ──
 
   return (
     <main className="page-shell">
@@ -825,11 +821,11 @@ export default function LeavePage() {
                 <tr style={{ opacity: 0.4 }}>
                   <th></th>
                   {leaveTypes.map((t) => (
-                    <>
-                      <th key={`${t.code}-e`} style={{ padding: "0.3rem 0.5rem", fontSize: "0.65rem", textTransform: "uppercase", textAlign: "center", borderLeft: "1px solid var(--border, #e5e7eb)" }}>Ent.</th>
-                      <th key={`${t.code}-u`} style={{ padding: "0.3rem 0.5rem", fontSize: "0.65rem", textTransform: "uppercase", textAlign: "center" }}>Used</th>
-                      <th key={`${t.code}-r`} style={{ padding: "0.3rem 0.5rem", fontSize: "0.65rem", textTransform: "uppercase", textAlign: "center" }}>Left</th>
-                    </>
+                    <React.Fragment key={t.code}>
+                      <th style={{ padding: "0.3rem 0.5rem", fontSize: "0.65rem", textTransform: "uppercase", textAlign: "center", borderLeft: "1px solid var(--border, #e5e7eb)" }}>Ent.</th>
+                      <th style={{ padding: "0.3rem 0.5rem", fontSize: "0.65rem", textTransform: "uppercase", textAlign: "center" }}>Used</th>
+                      <th style={{ padding: "0.3rem 0.5rem", fontSize: "0.65rem", textTransform: "uppercase", textAlign: "center" }}>Left</th>
+                    </React.Fragment>
                   ))}
                 </tr>
               </thead>

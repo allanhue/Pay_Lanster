@@ -61,6 +61,9 @@ func main() {
 	r := gin.Default()
 	r.Use(CORSMiddleware())
 	app.Register(r)
+	for _, route := range r.Routes() {
+		log.Printf("registered route: %s %s", route.Method, route.Path)
+	}
 
 	//  Get port
 	port := os.Getenv("PORT")

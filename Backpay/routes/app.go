@@ -11,6 +11,10 @@ type UserRole string
 const (
 	RoleSystemAdmin UserRole = "system_admin"
 	RoleOrgAdmin    UserRole = "org_admin"
+
+	//adding other roles for future use
+	// RoleHRManager   UserRole = "payroll_manager"
+	// RoleEmployee    UserRole = "employee"
 )
 
 type User struct {

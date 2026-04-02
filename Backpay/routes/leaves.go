@@ -3,6 +3,7 @@ package routes
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -50,6 +51,7 @@ func normalizeCode(input string) string {
 }
 
 func (a *App) leaveTypesHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("leaveTypesHandler: method=%s path=%s query=%s", r.Method, r.URL.Path, r.URL.RawQuery)
 	switch r.Method {
 	case http.MethodGet:
 		a.listLeaveTypes(w, r)
